@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(npm install:*)",
+      "Bash(curl:*)",
+      "Bash(python setup_supabase.py)",
+      "Bash(python:*)",
+      "Bash(node src/server.js)",
+      "Bash(killall node:*)",
+      "Bash(killall python:*)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":3000\")",
+      "Bash(findstr LISTENING)",
+      "Bash(findstr \":8000\")",
+      "Bash(pkill -f \"uvicorn api.main\")",
+      "Bash(pkill -f \"node src/server\")",
+      "Bash(findstr \":8001\")",
+      "Bash(findstr \":3001\")",
+      "Bash(taskkill /PID 39732 /F)",
+      "Bash(taskkill /PID 26912 /F)",
+      "Bash(kill 39732)",
+      "Bash(kill 26912)",
+      "Bash(findstr \":8001\\\\|:3001\")",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
