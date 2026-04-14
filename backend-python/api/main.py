@@ -13,7 +13,7 @@ import os
 from dotenv import load_dotenv
 
 # Import do webhook de espelhamento GitHub
-from webhook_github import router as webhook_router
+from .webhook_github import router as webhook_router
 
 load_dotenv()
 
