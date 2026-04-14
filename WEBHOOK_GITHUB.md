@@ -10,7 +10,7 @@
 
 | Campo | Valor |
 |-------|-------|
-| **Payload URL** | `http://req.joaosmfilho.org/api/webhook` |
+| **Payload URL** | `https://req.joaosmfilho.org/api/webhook` |
 | **Content type** | `application/json` |
 | **Secret** | `mesmo-segredo-do-repo-panel` |
 | **SSL verification** | Disabled (se HTTP) |
@@ -75,7 +75,7 @@ REPO_PATH=/data/repos/joaofilhosm__pesquisa-saude
 
 ### Via curl:
 ```bash
-curl -X POST http://req.joaosmfilho.org/api/webhook \
+curl -X POST https://req.joaosmfilho.org/api/webhook \
   -H "Content-Type: application/json" \
   -H "X-Hub-Signature-256: sha256=TESTE" \
   -d '{"ref":"refs/heads/main"}'
@@ -83,7 +83,7 @@ curl -X POST http://req.joaosmfilho.org/api/webhook \
 
 ### Verificar status:
 ```bash
-curl http://req.joaosmfilho.org/api/webhook/status
+curl https://req.joaosmfilho.org/api/webhook/status
 ```
 
 ---

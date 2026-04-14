@@ -137,7 +137,7 @@ Envie sua API Key no header: `X-API-Key`
 
 Exemplo:
 ```bash
-curl -H "X-API-Key: sk-sua-key" "http://localhost:8001/pesquisar?q=diabetes"
+curl -H "X-API-Key: sk-sua-key" "https://req.joaosmfilho.org/pesquisar?q=diabetes"
 ```
     """,
     version="2.0.0",
@@ -184,7 +184,7 @@ async def get_info_api_key():
         "message": "API Key necessária para acesso",
         "api_key": "sk-pesquisa-saude-2026-master-key",
         "como_usar": {
-            "curl": 'curl -H "X-API-Key: sk-sua-key" "http://localhost:8001/pesquisar?q=diabetes"',
+            "curl": 'curl -H "X-API-Key: sk-sua-key" "https://req.joaosmfilho.org/pesquisar?q=diabetes"',
             "python": 'requests.get(url, headers={"X-API-Key": "sk-sua-key"})',
             "javascript": 'fetch(url, {headers: {"X-API-Key": "sk-sua-key"}})'
         }
@@ -231,7 +231,7 @@ async def pesquisar_get(
 
     **Exemplo:**
     ```bash
-    curl -H "X-API-Key: sk-key" "http://localhost:8001/pesquisar?q=diabetes&limit=10"
+    curl -H "X-API-Key: sk-key" "https://req.joaosmfilho.org/pesquisar?q=diabetes&limit=10"
     ```
     """
     request = PesquisaRequest(query=q, ano_min=ano_min, limit=limit)

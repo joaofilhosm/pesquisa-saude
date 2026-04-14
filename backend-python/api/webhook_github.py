@@ -7,7 +7,7 @@ Quando o GitHub notificar um push, este endpoint:
 3. Reinicia a aplicação
 
 Configure no GitHub:
-- URL: http://req.joaosmfilho.org/webhook
+- URL: https://req.joaosmfilho.org/webhook
 - Secret: WEBHOOK_SECRET (variável de ambiente)
 - Events: Push only
 """

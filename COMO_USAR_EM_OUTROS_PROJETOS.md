@@ -30,7 +30,7 @@ python -m uvicorn api:app --host 0.0.0.0 --port 8001
 
 **JavaScript/Node.js:**
 ```javascript
-const response = await fetch('http://localhost:8001/pesquisar?q=diabetes');
+const response = await fetch('https://req.joaosmfilho.org/pesquisar?q=diabetes');
 const dados = await response.json();
 console.log(dados.resultados);
 ```
@@ -39,7 +39,7 @@ console.log(dados.resultados);
 ```python
 import requests
 
-response = requests.get('http://localhost:8001/pesquisar', params={'q': 'diabetes'})
+response = requests.get('https://req.joaosmfilho.org/pesquisar', params={'q': 'diabetes'})
 dados = response.json()
 for r in dados['resultados']:
     print(f"{r['titulo']} - {r['citacao_abnt']}")
@@ -47,7 +47,7 @@ for r in dados['resultados']:
 
 **cURL:**
 ```bash
-curl "http://localhost:8001/pesquisar?q=diabetes&limit=10"
+curl "https://req.joaosmfilho.org/pesquisar?q=diabetes&limit=10"
 ```
 
 ---
@@ -140,7 +140,7 @@ services:
 
 ```bash
 docker-compose up -d
-curl "http://localhost:8001/pesquisar?q=diabetes"
+curl "https://req.joaosmfilho.org/pesquisar?q=diabetes"
 ```
 
 ---

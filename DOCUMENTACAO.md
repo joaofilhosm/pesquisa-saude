@@ -4,7 +4,7 @@
 
 API para pesquisa em fontes brasileiras de saúde com geração automática de citações no padrão ABNT.
 
-**Endpoint Base:** `http://req.joaosmfilho.org`
+**Endpoint Base:** `https://req.joaosmfilho.org`
 
 ---
 
@@ -18,7 +18,7 @@ Envie no header `X-API-Key`:
 
 ```bash
 curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
-  "http://localhost:8001/pesquisar?q=diabetes"
+  "https://req.joaosmfilho.org/pesquisar?q=diabetes"
 ```
 
 ### API Keys Válidas (Desenvolvimento)
@@ -38,7 +38,7 @@ curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
 Retorna informações básicas e links.
 
 ```bash
-curl http://localhost:8001/
+curl https://req.joaosmfilho.org/
 ```
 
 **Resposta:**
@@ -59,7 +59,7 @@ curl http://localhost:8001/
 Retorna informações sobre como usar a API Key.
 
 ```bash
-curl http://localhost:8001/api-key
+curl https://req.joaosmfilho.org/api-key
 ```
 
 **Resposta:**
@@ -68,7 +68,7 @@ curl http://localhost:8001/api-key
   "message": "API Key necessária para acesso",
   "api_key": "sk-pesquisa-saude-2026-master-key",
   "como_usar": {
-    "curl": "curl -H \"X-API-Key: sk-sua-key\" \"http://localhost:8001/pesquisar?q=diabetes\"",
+    "curl": "curl -H \"X-API-Key: sk-sua-key\" \"https://req.joaosmfilho.org/pesquisar?q=diabetes\"",
     "python": "requests.get(url, headers={\"X-API-Key\": \"sk-sua-key\"})",
     "javascript": "fetch(url, {headers: {\"X-API-Key\": \"sk-sua-key\"}})"
   }
@@ -84,7 +84,7 @@ Lista todas as fontes de pesquisa disponíveis.
 **Requer autenticação.**
 
 ```bash
-curl -H "X-API-Key: sk-key" http://localhost:8001/fontes
+curl -H "X-API-Key: sk-key" https://req.joaosmfilho.org/fontes
 ```
 
 **Resposta:**
@@ -109,7 +109,7 @@ Pesquisa em todas as fontes simultaneamente.
 
 ```bash
 curl -H "X-API-Key: sk-key" \
-  "http://localhost:8001/pesquisar?q=diabetes&limit=10"
+  "https://req.joaosmfilho.org/pesquisar?q=diabetes&limit=10"
 ```
 
 **Parâmetros Query:**
@@ -153,7 +153,7 @@ Permite enviar parâmetros no corpo da requisição.
 **Requer autenticação.**
 
 ```bash
-curl -X POST http://localhost:8001/pesquisar \
+curl -X POST https://req.joaosmfilho.org/pesquisar \
   -H "X-API-Key: sk-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -186,7 +186,7 @@ Ideal para condutas, medicamentos, doses, diagnóstico.
 **Requer autenticação.**
 
 ```bash
-curl -X POST http://localhost:8001/resposta \
+curl -X POST https://req.joaosmfilho.org/resposta \
   -H "X-API-Key: sk-key" \
   -H "Content-Type: application/json" \
   -d '{"query": "tratamento diabetes tipo 2", "ano_min": 2020}'
@@ -244,7 +244,7 @@ python -m uvicorn main:app --host 0.0.0.0 --port 8001
 import requests
 
 # Configuração
-API_URL = "http://localhost:8001"
+API_URL = "https://req.joaosmfilho.org"
 API_KEY = "sk-pesquisa-saude-2026-master-key"
 
 def buscar_no_seu_projeto(termo):
@@ -265,7 +265,7 @@ for r in resultados:
 ### Node.js / JavaScript
 
 ```javascript
-const API_URL = "http://localhost:8001";
+const API_URL = "https://req.joaosmfilho.org";
 const API_KEY = "sk-pesquisa-saude-2026-master-key";
 
 async function buscarNoSeuProjeto(termo) {
@@ -292,7 +292,7 @@ console.log(resultados);
 ```javascript
 // componente/PesquisaSaude.jsx
 async function pesquisarSaude(termo) {
-  const res = await fetch("http://localhost:8001/pesquisar", {
+  const res = await fetch("https://req.joaosmfilho.org/pesquisar", {
     method: "POST",
     headers: {
       "X-API-Key": "sk-pesquisa-saude-2026-master-key",
@@ -327,7 +327,7 @@ function MeuComponente() {
 
 ```php
 <?php
-$api_url = "http://localhost:8001/pesquisar";
+$api_url = "https://req.joaosmfilho.org/pesquisar";
 $api_key = "sk-pesquisa-saude-2026-master-key";
 
 $ch = curl_init($api_url);
@@ -357,7 +357,7 @@ import java.net.URI;
 HttpClient client = HttpClient.newHttpClient();
 
 HttpRequest request = HttpRequest.newBuilder()
-    .uri(URI.create("http://localhost:8001/pesquisar"))
+    .uri(URI.create("https://req.joaosmfilho.org/pesquisar"))
     .header("X-API-Key", "sk-pesquisa-saude-2026-master-key")
     .header("Content-Type", "application/json")
     .POST(HttpRequest.BodyPublishers.ofString(
@@ -376,13 +376,13 @@ System.out.println(response.body());
 
 ```bash
 # Pesquisa simples
-curl -X POST http://localhost:8001/pesquisar \
+curl -X POST https://req.joaosmfilho.org/pesquisar \
   -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
   -H "Content-Type: application/json" \
   -d '{"query": "diabetes"}'
 
 # Salvar resultados em arquivo
-curl -X POST http://localhost:8001/pesquisar \
+curl -X POST https://req.joaosmfilho.org/pesquisar \
   -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
   -H "Content-Type: application/json" \
   -d '{"query": "asma"}' > resultados_asma.json
@@ -398,7 +398,7 @@ curl -X POST http://localhost:8001/pesquisar \
 import requests
 
 API_KEY = "sk-pesquisa-saude-2026-master-key"
-BASE_URL = "http://localhost:8001"
+BASE_URL = "https://req.joaosmfilho.org"
 
 headers = {"X-API-Key": API_KEY}
 
@@ -431,7 +431,7 @@ for ref in dados["referencias"]:
 
 ```javascript
 const API_KEY = "sk-pesquisa-saude-2026-master-key";
-const BASE_URL = "http://localhost:8001";
+const BASE_URL = "https://req.joaosmfilho.org";
 
 async function pesquisar(termo) {
   const response = await fetch(
@@ -467,16 +467,16 @@ resultados.forEach(r => console.log(`${r.titulo} - ${r.citacao_abnt}`));
 ```bash
 # Pesquisa simples
 curl -H "X-API-Key: sk-key" \
-  "http://localhost:8001/pesquisar?q=diabetes&limit=5"
+  "https://req.joaosmfilho.org/pesquisar?q=diabetes&limit=5"
 
 # Pesquisa avançada
-curl -X POST http://localhost:8001/pesquisar \
+curl -X POST https://req.joaosmfilho.org/pesquisar \
   -H "X-API-Key: sk-key" \
   -H "Content-Type: application/json" \
   -d '{"query": "asma", "ano_min": 2020}'
 
 # Resposta formatada
-curl -X POST http://localhost:8001/resposta \
+curl -X POST https://req.joaosmfilho.org/resposta \
   -H "X-API-Key: sk-key" \
   -H "Content-Type: application/json" \
   -d '{"query": "tratamento asma"}'
@@ -550,8 +550,8 @@ environment:
 
 A API possui documentação interativa:
 
-- **Swagger UI:** `http://localhost:8001/docs`
-- **ReDoc:** `http://localhost:8001/redoc`
+- **Swagger UI:** `https://req.joaosmfilho.org/docs`
+- **ReDoc:** `https://req.joaosmfilho.org/redoc`
 
 ---
 

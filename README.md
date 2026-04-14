@@ -44,11 +44,11 @@ python -m uvicorn api.main:app --reload --port 8001
 
 ```bash
 # Abra no navegador
-http://localhost:8001/docs
+https://req.joaosmfilho.org/docs
 
 # Ou via curl
 curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
-  "http://localhost:8001/pesquisar?q=diabetes"
+  "https://req.joaosmfilho.org/pesquisar?q=diabetes"
 ```
 
 ## 📖 Documentação
@@ -70,7 +70,7 @@ A API usa API Key no header `X-API-Key`.
 **Exemplo:**
 ```bash
 curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
-  "http://localhost:8001/pesquisar?q=hipertensao"
+  "https://req.joaosmfilho.org/pesquisar?q=hipertensao"
 ```
 
 ## 📝 Endpoints Principais
@@ -110,7 +110,7 @@ import requests
 API_KEY = "sk-pesquisa-saude-2026-master-key"
 
 response = requests.get(
-    "http://localhost:8001/pesquisar?q=diabetes",
+    "https://req.joaosmfilho.org/pesquisar?q=diabetes",
     headers={"X-API-Key": API_KEY}
 )
 
@@ -122,7 +122,7 @@ for r in response.json()["resultados"]:
 
 ```javascript
 const response = await fetch(
-  "http://localhost:8001/pesquisar?q=diabetes",
+  "https://req.joaosmfilho.org/pesquisar?q=diabetes",
   { headers: { "X-API-Key": "sk-pesquisa-saude-2026-master-key" } }
 );
 
@@ -200,7 +200,7 @@ PORT=8001
 python testar_api.py diabetes
 
 # Testar endpoints
-curl -H "X-API-Key: sk-key" "http://localhost:8001/fontes"
+curl -H "X-API-Key: sk-key" "https://req.joaosmfilho.org/fontes"
 ```
 
 ## 📄 Licença
