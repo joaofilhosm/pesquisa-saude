@@ -1,0 +1,13 @@
+{
+  "name": "pesquisa-saude-api",
+  "version": "2.0.0",
+  "description": "API de Pesquisa em Saúde - Apenas Python/FastAPI",
+  "scripts": {
+    "start": "echo 'Use Python: python -m uvicorn backend-python.api.main:app'",
+    "test": "echo 'Use Python: pytest backend-python/'"
+  },
+  "keywords": ["saude", "api", "python", "fastapi", "abnt"],
+  "author": "joaofilhosm",
+  "license": "MIT",
+  "note": "Este projeto usa Python/FastAPI. Node.js não é necessário."
+}
