@@ -12,6 +12,9 @@ import asyncio
 import os
 from dotenv import load_dotenv
 
+# Import do webhook de espelhamento GitHub
+from webhook_github import router as webhook_router
+
 load_dotenv()
 
 # Import opcional do Supabase
@@ -148,6 +151,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Registrar webhook do GitHub
+app.include_router(webhook_router, prefix="/api", tags=["Webhook GitHub"])
 
 # === Endpoints Públicos (sem autenticação) ===
 
