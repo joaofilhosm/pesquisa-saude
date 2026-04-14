@@ -4,7 +4,7 @@
 
 API para pesquisa em fontes brasileiras de saúde com geração automática de citações no padrão ABNT.
 
-**Endpoint Base:** `http://localhost:8001`
+**Endpoint Base:** `http://req.joaosmfilho.org`
 
 ---
 
@@ -202,6 +202,190 @@ curl -X POST http://localhost:8001/resposta \
     "BRASIL. Protocolo Clínico de Diabetes. 2022."
   ]
 }
+```
+
+---
+
+## Como Integrar em Outros Projetos
+
+A API roda como um serviço HTTP independente. Seus outros projetos acessam via URL.
+
+### Fluxo de Integração
+
+```
+┌─────────────────┐      HTTP Request       ┌──────────────────────┐
+│  SEU PROJETO    │ ──────────────────────> │  API Pesquisa Saúde  │
+│  (qualquer um)  │                         │  (localhost:8001)    │
+│                 │ <────────────────────── │                      │
+└─────────────────┘      JSON Response      └──────────────────────┘
+```
+
+### Passo a Passo
+
+1. **Inicie a API** (uma vez):
+```bash
+cd backend-python/api
+python -m uvicorn main:app --host 0.0.0.0 --port 8001
+```
+
+2. **Acesse de qualquer projeto** usando a URL `http://localhost:8001`
+
+3. **Envie a API Key** no header `X-API-Key`
+
+4. **Receba os resultados** diretamente no seu projeto
+
+---
+
+## Exemplos de Integração
+
+### Python (qualquer projeto Python)
+
+```python
+import requests
+
+# Configuração
+API_URL = "http://localhost:8001"
+API_KEY = "sk-pesquisa-saude-2026-master-key"
+
+def buscar_no_seu_projeto(termo):
+    response = requests.post(
+        f"{API_URL}/pesquisar",
+        headers={"X-API-Key": API_KEY},
+        json={"query": termo}
+    )
+    return response.json()["resultados"]
+
+# Uso no seu projeto
+resultados = buscar_no_seu_projeto("diabetes")
+for r in resultados:
+    print(f"Título: {r['titulo']}")
+    print(f"Citação ABNT: {r['citacao_abnt']}")
+```
+
+### Node.js / JavaScript
+
+```javascript
+const API_URL = "http://localhost:8001";
+const API_KEY = "sk-pesquisa-saude-2026-master-key";
+
+async function buscarNoSeuProjeto(termo) {
+  const response = await fetch(`${API_URL}/pesquisar`, {
+    method: "POST",
+    headers: {
+      "X-API-Key": API_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ query: termo })
+  });
+  
+  const data = await response.json();
+  return data.resultados;
+}
+
+// Uso no seu projeto
+const resultados = await buscarNoSeuProjeto("hipertensão");
+console.log(resultados);
+```
+
+### React / Frontend
+
+```javascript
+// componente/PesquisaSaude.jsx
+async function pesquisarSaude(termo) {
+  const res = await fetch("http://localhost:8001/pesquisar", {
+    method: "POST",
+    headers: {
+      "X-API-Key": "sk-pesquisa-saude-2026-master-key",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ query: termo })
+  });
+  
+  const data = await res.json();
+  return data.resultados;
+}
+
+// Uso no componente
+function MeuComponente() {
+  const [resultados, setResultados] = useState([]);
+  
+  useEffect(() => {
+    pesquisarSaude("diabetes").then(setResultados);
+  }, []);
+  
+  return (
+    <ul>
+      {resultados.map(r => (
+        <li key={r.id}>{r.titulo} - {r.citacao_abnt}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+### PHP
+
+```php
+<?php
+$api_url = "http://localhost:8001/pesquisar";
+$api_key = "sk-pesquisa-saude-2026-master-key";
+
+$ch = curl_init($api_url);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    "X-API-Key: {$api_key}",
+    "Content-Type: application/json"
+]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(["query" => "diabetes"]));
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+$resultados = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+foreach ($resultados["resultados"] as $r) {
+    echo $r["titulo"] . " - " . $r["citacao_abnt"] . "\n";
+}
+?>
+```
+
+### Java
+
+```java
+import java.net.http.*;
+import java.net.URI;
+
+HttpClient client = HttpClient.newHttpClient();
+
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create("http://localhost:8001/pesquisar"))
+    .header("X-API-Key", "sk-pesquisa-saude-2026-master-key")
+    .header("Content-Type", "application/json")
+    .POST(HttpRequest.BodyPublishers.ofString(
+        "{\"query\": \"diabetes\"}"
+    ))
+    .build();
+
+HttpResponse<String> response = client.send(request, 
+    HttpResponse.BodyHandlers.ofString());
+
+// Processar JSON retornado
+System.out.println(response.body());
+```
+
+### cURL (terminal/scripts bash)
+
+```bash
+# Pesquisa simples
+curl -X POST http://localhost:8001/pesquisar \
+  -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "diabetes"}'
+
+# Salvar resultados em arquivo
+curl -X POST http://localhost:8001/pesquisar \
+  -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "asma"}' > resultados_asma.json
 ```
 
 ---

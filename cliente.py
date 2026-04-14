@@ -6,7 +6,7 @@ Uso:
 
     client = PesquisaSaudeClient(
         api_key="sk-pesquisa-saude-2026-master-key",
-        base_url="http://localhost:8001"
+        base_url="http://req.joaosmfilho.org"
     )
 
     resultados = client.pesquisar("diabetes")
@@ -23,7 +23,7 @@ class PesquisaSaudeClient:
     def __init__(
         self,
         api_key: str = "sk-pesquisa-saude-2026-master-key",
-        base_url: str = "http://localhost:8001"
+        base_url: str = "http://req.joaosmfilho.org"
     ):
         self.api_key = api_key
         self.base_url = base_url
