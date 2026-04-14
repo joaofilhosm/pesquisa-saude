@@ -11,8 +11,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Adicionar backend-python ao PYTHONPATH
 export PYTHONPATH="${SCRIPT_DIR}/backend-python:${PYTHONPATH}"
 
-# Porta: recebe exclusivamente do repo-panel
-USE_PORT=$PORT
+# Porta: recebe do repo-panel, usa 8001 se nao definida
+# Nunca usar 3000 ou 8089
+if [ -n "$PORT" ] && [ "$PORT" != "3000" ] && [ "$PORT" != "8089" ]; then
+    USE_PORT=$PORT
+else
+    USE_PORT=8001
+fi
 
 echo "=== API de Pesquisa em Saúde ==="
 echo "Port: $USE_PORT"
