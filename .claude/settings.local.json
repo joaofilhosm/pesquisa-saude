@@ -54,7 +54,8 @@
       "Bash(pkill -9 -f \"uvicorn.*3099\" pkill -9 -f \"uvicorn.*api.main\" sleep 2 ss -tlnp)",
       "Bash(lsof -t -i:3099)",
       "Bash(xargs kill *)",
-      "Bash(lsof *)"
+      "Bash(lsof *)",
+      "Bash(kill 570451 *)"
     ]
   }
 }
