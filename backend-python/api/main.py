@@ -35,6 +35,13 @@ from scrapers.sbc import SBCScraper
 from scrapers.scielo import SciELOScraper
 from scrapers.lilacs import LILACSScraper
 from scrapers.pubmed import PubMedScraper
+from scrapers.cochrane import CochraneScraper
+from scrapers.redalyc import RedalycScraper
+from scrapers.bdtd import BDTDScraper
+from scrapers.capes import CapesScraper
+from scrapers.semanticscholar import SemanticScholarScraper
+from scrapers.openalex import OpenAlexScraper
+from scrapers.googlescholar import GoogleScholarScraper
 from scrapers.cache import cache_medio, cache_curto
 from abnt.formatador import ABNTFormatador, Artigo, formatador
 
@@ -84,6 +91,7 @@ class ArtigoResponse(BaseModel):
     volume: Optional[str] = None
     issue: Optional[str] = None
     paginas: Optional[str] = None
+    keywords: Optional[List[str]] = None
     citacao_abnt: Optional[str] = None
     referencia_abnt: Optional[str] = None
 
@@ -129,6 +137,13 @@ FONTES_CONFIG = [
     {"slug": "scielo", "nome": "SciELO", "tipo": "base_dados", "prioridade": 1},
     {"slug": "lilacs", "nome": "LILACS/BVS", "tipo": "base_dados", "prioridade": 1},
     {"slug": "pubmed", "nome": "PubMed (E-utilities)", "tipo": "base_dados", "prioridade": 1},
+    {"slug": "cochrane", "nome": "Cochrane Library", "tipo": "base_dados", "prioridade": 1},
+    {"slug": "redalyc", "nome": "Redalyc", "tipo": "base_dados", "prioridade": 2},
+    {"slug": "bdtd", "nome": "BDTD (Teses e Dissertações)", "tipo": "base_dados", "prioridade": 2},
+    {"slug": "capes", "nome": "Portal CAPES (CrossRef)", "tipo": "base_dados", "prioridade": 1},
+    {"slug": "semanticscholar", "nome": "Semantic Scholar (Allen AI)", "tipo": "base_dados", "prioridade": 1},
+    {"slug": "openalex", "nome": "OpenAlex (OurResearch)", "tipo": "base_dados", "prioridade": 1},
+    {"slug": "googlescholar", "nome": "Google Scholar (via proxy SOCKS5)", "tipo": "base_dados", "prioridade": 2},
 ]
 
 # === Lifespan ===
@@ -144,6 +159,13 @@ async def lifespan(app: FastAPI):
         "scielo": SciELOScraper(),
         "lilacs": LILACSScraper(),
         "pubmed": PubMedScraper(),
+        "cochrane": CochraneScraper(),
+        "redalyc": RedalycScraper(),
+        "bdtd": BDTDScraper(),
+        "capes": CapesScraper(),
+        "semanticscholar": SemanticScholarScraper(),
+        "openalex": OpenAlexScraper(),
+        "googlescholar": GoogleScholarScraper(),
     }
     yield
 
@@ -154,20 +176,33 @@ app = FastAPI(
     description="""
 ## Pesquisa Real em Fontes Brasileiras de Saúde
 
-Esta API realiza pesquisas **reais** em múltiplas fontes brasileiras de saúde,
+Esta API realiza pesquisas **reais** em múltiplas fontes de saúde,
 retornando artigos verídicos com links funcionais, DOIs reais e abstracts completos.
 
-### Fontes de Dados (8 fontes)
+### Fontes de Dados (15 fontes — todas gratuitas)
+
+**Bases de Dados Internacionais**
 - **PubMed** – NCBI E-utilities API oficial · abstract completo · DOI real · PMID
+- **Cochrane Library** – EuropePMC API · revisões sistemáticas e meta-análises
 - **SciELO** – search.scielo.org · artigos científicos em português/inglês
+- **Semantic Scholar** – Allen AI Graph API · +200 M papers · citationCount · `S2_API_KEY` opcional e gratuita
+- **OpenAlex** – OurResearch · +250 M papers · totalmente aberto · sem autenticação
+- **Google Scholar** – via `scholarly` + proxy SOCKS5 local · requer `GOOGLE_SCHOLAR_PROXY`
+
+**Bases de Dados Nacionais / Latino-Americanas**
 - **LILACS/BVS** – pesquisa.bvsalud.org · literatura latino-americana (BIREME)
+- **Redalyc** – rede de revistas latino-americanas de acesso aberto
+- **BDTD** – IBICT/VuFind · teses e dissertações brasileiras
+- **Portal CAPES** – CrossRef API · metadados de periódicos indexados pelo CAPES
+
+**Protocolos e Diretrizes Nacionais**
 - **Ministério da Saúde** – PCDTs e BVS (gov.br) · protocolos oficiais
 - **SBMFC, SBP, SBPT, SBC** – protocolos e diretrizes das sociedades médicas
 
 ### Garantias
 - **Zero dados fictícios**: nenhum resultado é fabricado — lista vazia se sem resultados
 - **Links reais**: todas as URLs apontam para documentos existentes
-- **Abstracts completos**: via NCBI E-utilities para PubMed
+- **Abstracts completos**: via NCBI E-utilities para PubMed e EuropePMC para Cochrane
 - **DOIs verificados**: extraídos dos metadados reais dos artigos
 - **Cache inteligente**: curto (5 min) · médio (1 h para buscas) · longo (24 h para PCDTs)
 
@@ -203,8 +238,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://req.joaosmfilho.org';
 const API_KEY  = import.meta.env.VITE_API_KEY  || 'sk-pesquisa-saude-2026-master-key';
 
 export type FonteSlug =
-  | 'pubmed' | 'scielo' | 'lilacs' | 'ministerio'
-  | 'sbmfc'  | 'sbp'   | 'sbpt'   | 'sbc';
+  | 'pubmed' | 'cochrane' | 'scielo' | 'lilacs' | 'capes' | 'semanticscholar' | 'openalex' | 'googlescholar'
+  | 'redalyc' | 'bdtd'
+  | 'ministerio' | 'sbmfc' | 'sbp' | 'sbpt' | 'sbc';
 
 export interface ResultadoPesquisa {
   id: string | null; titulo: string; resumo: string | null;
@@ -280,14 +316,21 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Search, ExternalLink, Copy, CheckCheck } from 'lucide-react';
 
 const FONTES: { slug: FonteSlug; label: string }[] = [
-  { slug: 'pubmed',     label: 'PubMed'          },
-  { slug: 'scielo',     label: 'SciELO'           },
-  { slug: 'lilacs',     label: 'LILACS/BVS'       },
-  { slug: 'ministerio', label: 'Min. Saúde (PCDT)' },
-  { slug: 'sbmfc',      label: 'SBMFC'            },
-  { slug: 'sbp',        label: 'SBP'              },
-  { slug: 'sbpt',       label: 'SBPT'             },
-  { slug: 'sbc',        label: 'SBC'              },
+  { slug: 'pubmed',     label: 'PubMed'            },
+  { slug: 'cochrane',   label: 'Cochrane'           },
+  { slug: 'scielo',     label: 'SciELO'             },
+  { slug: 'lilacs',     label: 'LILACS/BVS'         },
+  { slug: 'capes',          label: 'Portal CAPES'       },
+  { slug: 'semanticscholar', label: 'Semantic Scholar'   },
+  { slug: 'openalex',       label: 'OpenAlex'           },
+  { slug: 'googlescholar',  label: 'Google Scholar'     },
+  { slug: 'redalyc',        label: 'Redalyc'            },
+  { slug: 'bdtd',       label: 'BDTD (Teses)'       },
+  { slug: 'ministerio', label: 'Min. Saúde (PCDT)'  },
+  { slug: 'sbmfc',      label: 'SBMFC'              },
+  { slug: 'sbp',        label: 'SBP'                },
+  { slug: 'sbpt',       label: 'SBPT'               },
+  { slug: 'sbc',        label: 'SBC'                },
 ];
 
 export function PesquisaSaude() {
@@ -675,7 +718,7 @@ _PLAYGROUND_HTML = """<!DOCTYPE html>
 <div style="max-width:1200px;margin:0 auto 20px;">
   <h1>🔬 API Pesquisa Saúde <span class="badge">v3.0</span></h1>
   <p class="subtitle">
-    Playground interativo — teste em tempo real as buscas em fontes brasileiras de saúde.
+    Playground interativo — teste em tempo real as buscas em 15 fontes de saúde (nacionais e internacionais).
     Resultados reais · Links verificados · Abstracts completos · Citações ABNT
     &nbsp;·&nbsp; <a href="/docs" target="_blank">Swagger UI</a>
   </p>
@@ -779,14 +822,21 @@ _PLAYGROUND_HTML = """<!DOCTYPE html>
 
 <script>
   const FONTES = [
-    { slug: "pubmed",    label: "PubMed",          tipo: "base_dados" },
-    { slug: "scielo",    label: "SciELO",           tipo: "base_dados" },
-    { slug: "lilacs",    label: "LILACS/BVS",       tipo: "base_dados" },
-    { slug: "ministerio",label: "Ministério Saúde", tipo: "governo"    },
-    { slug: "sbmfc",     label: "SBMFC",            tipo: "sociedade"  },
-    { slug: "sbp",       label: "SBP",              tipo: "sociedade"  },
-    { slug: "sbpt",      label: "SBPT",             tipo: "sociedade"  },
-    { slug: "sbc",       label: "SBC",              tipo: "sociedade"  },
+    { slug: "pubmed",    label: "PubMed",             tipo: "base_dados" },
+    { slug: "cochrane",  label: "Cochrane",            tipo: "base_dados" },
+    { slug: "scielo",    label: "SciELO",              tipo: "base_dados" },
+    { slug: "lilacs",    label: "LILACS/BVS",          tipo: "base_dados" },
+    { slug: "capes",           label: "Portal CAPES",        tipo: "base_dados" },
+    { slug: "semanticscholar", label: "Semantic Scholar",    tipo: "base_dados" },
+    { slug: "openalex",        label: "OpenAlex",            tipo: "base_dados" },
+    { slug: "googlescholar",   label: "Google Scholar",      tipo: "base_dados" },
+    { slug: "redalyc",         label: "Redalyc",             tipo: "base_dados" },
+    { slug: "bdtd",      label: "BDTD (Teses)",        tipo: "base_dados" },
+    { slug: "ministerio",label: "Ministério Saúde",    tipo: "governo"    },
+    { slug: "sbmfc",     label: "SBMFC",               tipo: "sociedade"  },
+    { slug: "sbp",       label: "SBP",                 tipo: "sociedade"  },
+    { slug: "sbpt",      label: "SBPT",                tipo: "sociedade"  },
+    { slug: "sbc",       label: "SBC",                 tipo: "sociedade"  },
   ];
 
   const TYPE_BADGE = {
@@ -916,6 +966,10 @@ _PLAYGROUND_HTML = """<!DOCTYPE html>
           ? `<div class="abstract" onclick="toggleAbstract(this)" title="Clique para expandir">${esc(art.resumo)}</div>`
           : "";
 
+        const keywordsHtml = art.keywords && art.keywords.length
+          ? `<div style="font-size:.72rem;color:var(--text-muted);margin-top:6px;">🏷️ ${art.keywords.map(k => esc(k)).join(" · ")}</div>`
+          : "";
+
         const abntHtml = art.referencia_abnt
           ? `<div class="abnt" onclick="copyText(${JSON.stringify(art.referencia_abnt)})" title="Clique para copiar">
                <span style="font-weight:600;color:var(--yellow);">${esc(art.citacao_abnt || "")}</span>
@@ -932,6 +986,7 @@ _PLAYGROUND_HTML = """<!DOCTYPE html>
           ${authorsHtml ? `<div style="font-size:.78rem;color:var(--text-muted);margin-bottom:6px;">${authorsHtml}</div>` : ""}
           <div class="meta">${chips.join("")}</div>
           ${abstractHtml}
+          ${keywordsHtml}
           ${abntHtml}
         `;
         list.appendChild(card);
@@ -1033,19 +1088,20 @@ async def pesquisar_get(
     api_key: str = Depends(get_api_key),
 ):
     """
-    Pesquisa unificada em TODAS as fontes brasileiras de saúde.
+    Pesquisa unificada em TODAS as fontes de saúde (15 fontes).
 
     Retorna artigos **reais** com:
     - Links funcionais para os documentos originais
     - DOIs verificados
-    - Abstracts completos (PubMed via NCBI E-utilities)
+    - Abstracts completos (PubMed via NCBI E-utilities; Cochrane via EuropePMC)
     - Citações ABNT automáticas
 
-    **Fontes disponíveis:** ministerio, sbmfc, sbp, sbpt, sbc, scielo, lilacs, pubmed
+    **Fontes disponíveis:** ministerio, sbmfc, sbp, sbpt, sbc, scielo, lilacs, pubmed,
+    cochrane, redalyc, bdtd, capes, semanticscholar, openalex, googlescholar
 
     **Exemplo:**
     ```bash
-    curl -H "X-API-Key: sk-key" "https://req.joaosmfilho.org/pesquisar?q=diabetes&fontes=pubmed,scielo&limit=20"
+    curl -H "X-API-Key: sk-key" "https://req.joaosmfilho.org/pesquisar?q=diabetes&fontes=pubmed,cochrane,scielo&limit=20"
     ```
     """
     fontes_lista = [f.strip() for f in fontes.split(",")] if fontes else None
@@ -1066,7 +1122,7 @@ async def pesquisar_post(
 
 @app.get("/pesquisar/{fonte}", response_model=PesquisaResponse, tags=["Pesquisa"])
 async def pesquisar_por_fonte(
-    fonte: str = Path(..., description="Slug da fonte: ministerio, sbmfc, sbp, sbpt, sbc, scielo, lilacs, pubmed"),
+    fonte: str = Path(..., description="Slug da fonte: ministerio, sbmfc, sbp, sbpt, sbc, scielo, lilacs, pubmed, cochrane, redalyc, bdtd, capes, semanticscholar, openalex, googlescholar"),
     q: str = Query(..., description="Termo de busca", min_length=2),
     ano_min: int = Query(default=2016, description="Ano mínimo de publicação"),
     limit: int = Query(default=20, ge=1, le=100, description="Máximo de resultados"),
@@ -1169,10 +1225,6 @@ async def _pesquisar(request: PesquisaRequest) -> PesquisaResponse:
 
     for r in resultados:
         artigo = Artigo.from_dict(r)
-        # Preencher dados extras no Artigo
-        artigo.volume = r.get("volume", "") or ""
-        artigo.numero = r.get("issue", "") or ""
-        artigo.paginas = r.get("paginas", "") or ""
 
         citacao_abnt = None
         referencia_abnt = None
@@ -1200,6 +1252,7 @@ async def _pesquisar(request: PesquisaRequest) -> PesquisaResponse:
             volume=r.get("volume"),
             issue=r.get("issue"),
             paginas=r.get("paginas"),
+            keywords=r.get("keywords") or None,
             citacao_abnt=citacao_abnt,
             referencia_abnt=referencia_abnt,
         ))

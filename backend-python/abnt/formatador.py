@@ -18,6 +18,7 @@ class Artigo:
     autores: List[str] = field(default_factory=list)
     ano: Optional[int] = None
     fonte: str = ""
+    journal: str = ""
     url: str = ""
     doi: str = ""
     volume: str = ""
@@ -33,6 +34,7 @@ class Artigo:
             autores=dados.get("autores", []) or [],
             ano=dados.get("ano"),
             fonte=dados.get("fonte", ""),
+            journal=dados.get("journal", "") or "",
             url=dados.get("url", "") or "",
             doi=dados.get("doi", "") or "",
             volume=dados.get("volume", "") or "",
@@ -67,6 +69,13 @@ class ABNTFormatador:
         "scielo": "SCIELO",
         "lilacs": "LILACS",
         "pubmed": "PUBMED",
+        "cochrane": "COCHRANE",
+        "redalyc": "REDALYC",
+        "bdtd": "BDTD",
+        "capes": "CAPES",
+        "semantic scholar": "SEMANTIC SCHOLAR",
+        "openalex": "OPENALEX",
+        "google scholar": "GOOGLE SCHOLAR",
         "hc-fmusp": "HC-FMUSP",
         "hospital das clínicas": "HC-FMUSP",
         "sírio-libanês": "HOSPITAL SÍRIO-LIBANÊS",
@@ -238,10 +247,17 @@ class ABNTFormatador:
         ano = artigo.ano or datetime.now().year
         referencia = f"{autor} {titulo} "
 
-        # Periódico (evitar nomes de bases como fonte)
-        fontes_genericas = {'SciELO', 'PubMed', 'LILACS', 'BVS'}
-        if artigo.fonte and artigo.fonte not in fontes_genericas:
-            referencia += f"{artigo.fonte}"
+        # Periódico: preferir journal real; cair em fonte se não for nome de base
+        fontes_genericas = {
+            'SciELO', 'PubMed', 'LILACS', 'BVS',
+            'Cochrane', 'Redalyc', 'BDTD', 'CAPES',
+            'Semantic Scholar', 'OpenAlex', 'Google Scholar',
+        }
+        periodico = artigo.journal or (
+            artigo.fonte if artigo.fonte not in fontes_genericas else ""
+        )
+        if periodico:
+            referencia += f"{periodico}"
             if artigo.volume:
                 referencia += f", v. {artigo.volume}"
             if artigo.numero:
