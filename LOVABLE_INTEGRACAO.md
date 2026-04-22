@@ -13,7 +13,7 @@ Adicione integração completa com a API de Pesquisa em Saúde brasileira (v3.0)
 
 ## 1. Configuração do ambiente
 
-Crie `.env.local`:
+Crie `.env.local` (substitua a API Key pela sua chave de produção antes de publicar):
 
 VITE_API_URL=https://req.joaosmfilho.org
 VITE_API_KEY=sk-pesquisa-saude-2026-master-key
