@@ -6,6 +6,10 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import re
 
+# Compilar regex uma vez no módulo (performance)
+_RE_INICIAIS = re.compile(r'^[A-Z]{1,3}$')
+_RE_ANO = re.compile(r'(20\d{2})')
+
 
 @dataclass
 class Artigo:
@@ -29,8 +33,11 @@ class Artigo:
             autores=dados.get("autores", []) or [],
             ano=dados.get("ano"),
             fonte=dados.get("fonte", ""),
-            url=dados.get("url", ""),
-            doi=dados.get("doi", ""),
+            url=dados.get("url", "") or "",
+            doi=dados.get("doi", "") or "",
+            volume=dados.get("volume", "") or "",
+            numero=dados.get("issue", "") or dados.get("numero", "") or "",
+            paginas=dados.get("paginas", "") or "",
             tipo=dados.get("tipo", "artigo")
         )
 
@@ -125,21 +132,24 @@ class ABNTFormatador:
             )
 
     def _extrair_sobrenome(self, autor: str) -> str:
-        """Extrai sobrenome do autor"""
-        # Nomes em maiúsculas já estão no formato correto
-        if autor.isupper():
-            return autor.split()[0]
+        """Extrai sobrenome do autor para citação curta"""
+        autor = autor.strip()
+        partes = autor.split()
 
-        # Padrão: "Sobrenome, Nome" ou "Nome Sobrenome"
-        partes = autor.strip().split()
         if len(partes) == 1:
             return partes[0].upper()
 
-        # Verificar se está no formato "Sobrenome, Nome"
+        # Formato PubMed: "Silva JM" – última parte são iniciais maiúsculas
+        ultima = partes[-1]
+        if _RE_INICIAIS.match(ultima):
+            # Sobrenome é tudo antes das iniciais
+            return ' '.join(partes[:-1]).upper()
+
+        # Formato "Sobrenome, Nome"
         if ',' in autor:
             return autor.split(',')[0].strip().upper()
 
-        # Formato "Nome Sobrenome" - pegar última parte
+        # Formato "Nome Sobrenome" – pegar última parte
         return partes[-1].upper()
 
     def _normalizar_instituicao(self, instituicao: str) -> str:
@@ -158,20 +168,45 @@ class ABNTFormatador:
         return instituicao.split()[0].upper()
 
     def _formatar_autores(self, autores: List[str]) -> str:
-        """Formata lista de autores no padrão ABNT"""
+        """Formata lista de autores no padrão ABNT NBR 6023"""
         if not autores:
             return "S.N."
 
         autores_formatados = []
         for autor in autores[:3]:  # Máximo 3 autores, depois usa et al.
-            partes = autor.strip().split()
+            autor = autor.strip()
+            if not autor:
+                continue
+
+            # Formato PubMed: "Silva JM" (sobrenome + iniciais sem vírgula)
+            # Detectar: última "palavra" são iniciais maiúsculas
+            partes = autor.split()
             if len(partes) >= 2:
-                # Formato: SOBRENOME, Nome
+                ultima = partes[-1]
+                # Iniciais: string com 1-3 maiúsculas (sem pontos)
+                if _RE_INICIAIS.match(ultima):
+                    sobrenome = ' '.join(partes[:-1]).upper()
+                    autores_formatados.append(f"{sobrenome}, {ultima}")
+                    continue
+
+            # Formato "Sobrenome, Nome" – já está no padrão ABNT
+            if ',' in autor:
+                partes_virgula = autor.split(',', 1)
+                sobrenome = partes_virgula[0].strip().upper()
+                nome = partes_virgula[1].strip()
+                autores_formatados.append(f"{sobrenome}, {nome}")
+                continue
+
+            # Formato "Nome Sobrenome" – inverter
+            if len(partes) >= 2:
                 sobrenome = partes[-1].upper()
                 nomes = ' '.join(partes[:-1])
                 autores_formatados.append(f"{sobrenome}, {nomes}")
             else:
                 autores_formatados.append(autor.upper())
+
+        if not autores_formatados:
+            return "S.N."
 
         if len(autores) > 3:
             return f"{autores_formatados[0]} et al."
@@ -199,19 +234,27 @@ class ABNTFormatador:
     def _formatar_artigo(
         self, autor: str, titulo: str, artigo: Artigo
     ) -> str:
-        """Formata artigo científico"""
+        """Formata artigo científico no padrão ABNT NBR 6023"""
         ano = artigo.ano or datetime.now().year
         referencia = f"{autor} {titulo} "
 
-        # Se tiver informações de periódico
-        if artigo.fonte and artigo.fonte not in ['SciELO', 'PubMed', 'LILACS']:
-            referencia += f"{artigo.fonte}, "
-
-        referencia += f"{ano}."
+        # Periódico (evitar nomes de bases como fonte)
+        fontes_genericas = {'SciELO', 'PubMed', 'LILACS', 'BVS'}
+        if artigo.fonte and artigo.fonte not in fontes_genericas:
+            referencia += f"{artigo.fonte}"
+            if artigo.volume:
+                referencia += f", v. {artigo.volume}"
+            if artigo.numero:
+                referencia += f", n. {artigo.numero}"
+            if artigo.paginas:
+                referencia += f", p. {artigo.paginas}"
+            referencia += f", {ano}."
+        else:
+            referencia += f"{ano}."
 
         if artigo.url:
             referencia += f" Disponível em: {artigo.url}."
-            referencia += f" Acesso em: {datetime.now().strftime('%d %b %Y')}."
+            referencia += f" Acesso em: {datetime.now().strftime('%d %b. %Y')}."
 
         if artigo.doi:
             referencia += f" DOI: {artigo.doi}."

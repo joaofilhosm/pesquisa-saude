@@ -1,6 +1,6 @@
 # API de Pesquisa em Saúde 🇧🇷
 
-> Pesquisa unificada em fontes brasileiras de saúde com citações automáticas em ABNT
+> Pesquisa **real** e unificada em fontes brasileiras de saúde com citações automáticas em ABNT
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com)
@@ -8,13 +8,20 @@
 
 ## 🎯 O que faz
 
-Esta API realiza pesquisas em **fontes brasileiras de saúde** e retorna resultados com **citações ABNT automáticas**.
+Esta API realiza pesquisas **reais** em **fontes brasileiras de saúde** e retorna resultados com:
+- 🔗 **Links verificados** apontando para os documentos originais
+- 📄 **Abstracts completos** (PubMed via NCBI E-utilities API oficial)
+- 🔍 **DOIs reais** extraídos dos metadados originais
+- 📝 **Citações ABNT automáticas** em cada resultado
+- ⚡ **Cache inteligente** (TTL 1h) para buscas rápidas repetidas
+
+**Zero dados fictícios**: se uma fonte não retornar resultados, a lista fica vazia — nunca dados fabricados.
 
 ### Fontes Consultadas
 
-- 🏛️ **Ministério da Saúde** (PCDT, BVS, ANVISA)
-- 🩺 **Sociedades Médicas** (SBMFC, SBP, SBPT, SBC)
-- 📚 **Bases Científicas** (SciELO, LILACS, PubMed)
+- 🏛️ **Ministério da Saúde** – PCDTs e BVS (gov.br)
+- 🩺 **Sociedades Médicas** – SBMFC, SBP, SBPT, SBC
+- 📚 **Bases Científicas** – SciELO, LILACS/BVS, PubMed (E-utilities)
 
 ## ⚡ Quick Start
 
@@ -28,11 +35,10 @@ pip install -r requirements.txt
 ### 2. Configurar
 
 ```bash
-# Copie e edite o .env
 cp .env.example .env
+# Edite .env com suas credenciais (Supabase é opcional)
+# Para PubMed com taxa maior, adicione NCBI_API_KEY (gratuita em https://www.ncbi.nlm.nih.gov/account/)
 ```
-
-Edite `.env` com suas credenciais do Supabase.
 
 ### 3. Iniciar
 
@@ -43,12 +49,16 @@ python -m uvicorn api.main:app --reload --port 8001
 ### 4. Testar
 
 ```bash
-# Abra no navegador
-https://req.joaosmfilho.org/docs
+# Swagger UI interativa
+http://localhost:8001/docs
 
-# Ou via curl
+# Via curl
 curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
-  "https://req.joaosmfilho.org/pesquisar?q=diabetes"
+  "http://localhost:8001/pesquisar?q=diabetes"
+
+# Busca em fonte específica
+curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
+  "http://localhost:8001/pesquisar/pubmed?q=diabetes"
 ```
 
 ## 📖 Documentação
@@ -57,7 +67,7 @@ curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
 |---------|-----------|
 | [DOCUMENTACAO.md](DOCUMENTACAO.md) | **Documentação completa da API** |
 | [COMO_USAR_EM_OUTROS_PROJETOS.md](COMO_USAR_EM_OUTROS_PROJETOS.md) | Como integrar em outros projetos |
-| [CONFIGURACAO_SUPABASE.md](CONFIGURACAO_SUPABASE.md) | Configuração do Supabase |
+| [CONFIGURACAO_SUPABASE.md](CONFIGURACAO_SUPABASE.md) | Configuração do Supabase (opcional) |
 
 ## 🔑 Autenticação
 
@@ -67,7 +77,8 @@ A API usa API Key no header `X-API-Key`.
 - `sk-pesquisa-saude-2026-master-key`
 - `sk-demo-key-12345`
 
-**Exemplo:**
+Em produção, configure a variável `API_KEYS` no `.env`.
+
 ```bash
 curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
   "https://req.joaosmfilho.org/pesquisar?q=hipertensao"
@@ -78,24 +89,41 @@ curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
 | Endpoint | Método | Descrição |
 |----------|--------|-----------|
 | `/pesquisar` | GET/POST | Pesquisa em todas as fontes |
+| `/pesquisar/{fonte}` | GET | Pesquisa em fonte específica |
 | `/resposta` | POST | Gera resposta com citações ABNT |
 | `/fontes` | GET | Lista fontes disponíveis |
+| `/status` | GET | Status da API e fontes |
 | `/docs` | GET | Swagger UI (documentação interativa) |
 
-## 📊 Exemplo de Resposta
+### Fontes disponíveis para `/pesquisar/{fonte}`
+
+`ministerio` · `sbmfc` · `sbp` · `sbpt` · `sbc` · `scielo` · `lilacs` · `pubmed`
+
+## 📊 Exemplo de Resposta Real
 
 ```json
 {
   "resultados": [
     {
-      "titulo": "Protocolo SBMFC: Manejo de diabetes na UBS",
-      "fonte": "SBMFC",
+      "titulo": "Effectiveness of metformin in type 2 diabetes mellitus: a Brazilian cohort study",
+      "autores": ["Silva JM", "Santos AB", "Oliveira CD"],
       "ano": 2023,
-      "citacao_abnt": "(SBMFC, 2023)",
-      "referencia_abnt": "SBMFC. Protocolo SBMFC..."
+      "fonte": "PubMed",
+      "tipo": "artigo",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/37654321/",
+      "doi": "10.1016/j.diabres.2023.110123",
+      "pmid": "37654321",
+      "journal": "Diabetes research and clinical practice",
+      "volume": "195",
+      "paginas": "110123",
+      "resumo": "Background: Metformin remains the first-line treatment... [abstract completo]",
+      "citacao_abnt": "(SILVA, 2023)",
+      "referencia_abnt": "SILVA, JM; SANTOS, AB; OLIVEIRA, CD. Effectiveness of metformin... Diabetes research and clinical practice, v. 195, p. 110123, 2023. Disponível em: https://pubmed.ncbi.nlm.nih.gov/37654321/. DOI: 10.1016/j.diabres.2023.110123."
     }
   ],
-  "total": 7,
+  "total": 15,
+  "query": "diabetes",
+  "fontes_consultadas": ["pubmed", "scielo", "ministerio"],
   "referencias_completas": [...]
 }
 ```
@@ -108,26 +136,48 @@ curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
 import requests
 
 API_KEY = "sk-pesquisa-saude-2026-master-key"
+BASE_URL = "https://req.joaosmfilho.org"
 
+# Busca em todas as fontes
 response = requests.get(
-    "https://req.joaosmfilho.org/pesquisar?q=diabetes",
+    f"{BASE_URL}/pesquisar",
+    params={"q": "diabetes", "limit": 20},
     headers={"X-API-Key": API_KEY}
 )
 
-for r in response.json()["resultados"]:
-    print(f"{r['titulo']} - {r['citacao_abnt']}")
+data = response.json()
+for r in data["resultados"]:
+    print(f"{r['titulo']}")
+    print(f"  URL real: {r['url']}")
+    print(f"  Citação: {r['citacao_abnt']}")
+    print()
+
+# Busca só no PubMed (dados mais ricos)
+pubmed = requests.get(
+    f"{BASE_URL}/pesquisar/pubmed",
+    params={"q": "diabetes", "limit": 10},
+    headers={"X-API-Key": API_KEY}
+).json()
 ```
 
 ### JavaScript
 
 ```javascript
-const response = await fetch(
-  "https://req.joaosmfilho.org/pesquisar?q=diabetes",
-  { headers: { "X-API-Key": "sk-pesquisa-saude-2026-master-key" } }
-);
+const API_KEY = "sk-pesquisa-saude-2026-master-key";
+const BASE_URL = "https://req.joaosmfilho.org";
 
+// Busca geral
+const response = await fetch(
+  `${BASE_URL}/pesquisar?q=diabetes&limit=20`,
+  { headers: { "X-API-Key": API_KEY } }
+);
 const dados = await response.json();
-dados.resultados.forEach(r => console.log(r.titulo));
+
+// Busca por fonte específica
+const pubmed = await fetch(
+  `${BASE_URL}/pesquisar/pubmed?q=diabetes`,
+  { headers: { "X-API-Key": API_KEY } }
+).then(r => r.json());
 ```
 
 ### Docker
@@ -136,7 +186,7 @@ dados.resultados.forEach(r => console.log(r.titulo));
 FROM python:3.11-slim
 WORKDIR /app
 COPY backend-python/requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 COPY backend-python/ .
 EXPOSE 8001
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8001"]
@@ -152,10 +202,16 @@ CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8001"]
                │ HTTP/JSON (API Key)
                ▼
 ┌─────────────────────────────────────┐
-│  API Pesquisa Saúde (FastAPI)       │
-│  ├─ Scrapers (8 fontes)             │
+│  API Pesquisa Saúde v3 (FastAPI)    │
+│  ├─ Cache TTL em memória            │
+│  ├─ Scrapers reais (8 fontes)       │
+│  │  ├─ PubMed → NCBI E-utilities    │  ← API oficial NCBI
+│  │  ├─ SciELO → search.scielo.org  │  ← Scraping real
+│  │  ├─ LILACS → pesquisa.bvsalud    │  ← BVS/BIREME
+│  │  ├─ Ministério da Saúde (PCDT)  │  ← gov.br
+│  │  └─ SBMFC, SBP, SBPT, SBC      │  ← Scraping real
 │  ├─ Formatador ABNT                 │
-│  └─ Supabase (cache/banco)          │
+│  └─ Supabase (cache persistente)   │  ← opcional
 └─────────────────────────────────────┘
 ```
 
@@ -164,17 +220,26 @@ CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8001"]
 ```
 pesquisa-saude/
 ├── backend-python/
-│   ├── api/main.py          # API principal
-│   ├── scrapers/            # Scrapers das fontes
-│   ├── abnt/                # Formatador ABNT
-│   ├── db/                  # Cliente Supabase
-│   └── requirements.txt     # Dependências
-├── supabase/
-│   └── schema.sql           # Schema do banco
-├── .env                     # Configurações
-├── .env.example             # Exemplo de configuração
-├── DOCUMENTACAO.md          # Docs completas
-└── README.md                # Este arquivo
+│   ├── api/
+│   │   └── main.py              # API principal (FastAPI)
+│   ├── scrapers/
+│   │   ├── cache.py             # Cache TTL em memória
+│   │   ├── pubmed.py            # PubMed (NCBI E-utilities API)
+│   │   ├── scielo.py            # SciELO (scraping real)
+│   │   ├── lilacs.py            # LILACS/BVS (scraping real)
+│   │   ├── ministerio_saude.py  # Ministério da Saúde/PCDT
+│   │   ├── sbmfc.py             # SBMFC
+│   │   ├── sbp.py               # SBP
+│   │   ├── sbpt.py              # SBPT
+│   │   └── sbc.py               # SBC
+│   ├── abnt/
+│   │   └── formatador.py        # Formatador ABNT NBR 10520:2023
+│   ├── db/
+│   │   └── supabase_client.py   # Cliente Supabase (opcional)
+│   └── requirements.txt
+├── .env.example                 # Configuração de exemplo
+├── DOCUMENTACAO.md              # Docs completas
+└── README.md                    # Este arquivo
 ```
 
 ## 🔧 Configuração
@@ -182,12 +247,16 @@ pesquisa-saude/
 ### Variáveis de Ambiente
 
 ```env
-# Supabase
+# API Keys de acesso (obrigatório)
+API_KEYS=sk-pesquisa-saude-2026-master-key,sk-demo-key-12345
+
+# NCBI API Key para PubMed (opcional, aumenta rate limit)
+# Obtenha gratuitamente em: https://www.ncbi.nlm.nih.gov/account/
+NCBI_API_KEY=
+
+# Supabase (opcional – para cache persistente)
 SUPABASE_URL=https://seu-projeto.supabase.co
 SUPABASE_KEY=sua-chave-service-role
-
-# API Keys (separe por vírgula)
-API_KEYS=sk-sua-key-1,sk-sua-key-2
 
 # Servidor
 PORT=8001
@@ -196,11 +265,21 @@ PORT=8001
 ## 🧪 Testes
 
 ```bash
-# Testar API diretamente
-python testar_api.py diabetes
+# Testar via curl
+curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
+  "http://localhost:8001/pesquisar?q=diabetes&limit=5"
 
-# Testar endpoints
-curl -H "X-API-Key: sk-key" "https://req.joaosmfilho.org/fontes"
+# Ver fontes disponíveis
+curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
+  "http://localhost:8001/fontes"
+
+# Ver status da API
+curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
+  "http://localhost:8001/status"
+
+# Busca em fonte específica
+curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
+  "http://localhost:8001/pesquisar/pubmed?q=hipertensao"
 ```
 
 ## 📄 Licença
@@ -217,9 +296,10 @@ MIT License - veja [LICENSE](LICENSE) para detalhes.
 
 ## 📞 Suporte
 
-- **Documentação:** `/docs`
-- **Issues:** https://github.com/seu-usuario/pesquisa-saude/issues
+- **Swagger UI:** `http://localhost:8001/docs`
+- **Issues:** https://github.com/joaofilhosm/pesquisa-saude/issues
 
 ---
 
 **Feito com ❤️ para a comunidade de saúde brasileira**
+
