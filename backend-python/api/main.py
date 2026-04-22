@@ -651,6 +651,7 @@ _PLAYGROUND_HTML = """<!DOCTYPE html>
   .type-governo  { background: #166534; color: #bbf7d0; }
   .type-sociedade { background: #1d4ed8; color: #bfdbfe; }
   .type-base_dados { background: #6d28d9; color: #ddd6fe; }
+  .type-api { background: #b45309; color: #fef3c7; }
   /* Inline row */
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   /* Button */
@@ -760,7 +761,7 @@ _PLAYGROUND_HTML = """<!DOCTYPE html>
 <div style="max-width:1200px;margin:0 auto 20px;">
   <h1>🔬 API Pesquisa Saúde <span class="badge">v3.0</span></h1>
   <p class="subtitle">
-    Playground interativo — teste em tempo real as buscas em 15 fontes de saúde (nacionais e internacionais).
+    Playground interativo — teste em tempo real as buscas em 19 fontes de saúde (nacionais e internacionais).
     Resultados reais · Links verificados · Abstracts completos · Citações ABNT
     &nbsp;·&nbsp; <a href="/docs" target="_blank">Swagger UI</a>
   </p>
@@ -872,6 +873,10 @@ _PLAYGROUND_HTML = """<!DOCTYPE html>
     { slug: "semanticscholar", label: "Semantic Scholar",    tipo: "base_dados" },
     { slug: "openalex",        label: "OpenAlex",            tipo: "base_dados" },
     { slug: "googlescholar",   label: "Google Scholar",      tipo: "base_dados" },
+    { slug: "serpapi",         label: "Google Scholar (SerpAPI)",      tipo: "api_paga" },
+    { slug: "searchapi",       label: "Google Scholar (SearchApi)",    tipo: "api_paga" },
+    { slug: "scholarapi",      label: "Google Scholar (ScholarAPI)",   tipo: "api_paga" },
+    { slug: "serply",          label: "Google Scholar (Serply)",       tipo: "api_paga" },
     { slug: "redalyc",         label: "Redalyc",             tipo: "base_dados" },
     { slug: "bdtd",      label: "BDTD (Teses)",        tipo: "base_dados" },
     { slug: "ministerio",label: "Ministério Saúde",    tipo: "governo"    },
@@ -885,6 +890,7 @@ _PLAYGROUND_HTML = """<!DOCTYPE html>
     governo:    ["type-governo",    "GOV"],
     sociedade:  ["type-sociedade",  "SOC"],
     base_dados: ["type-base_dados", "DB"],
+    api_paga:   ["type-api",        "API"],
   };
 
   // Build checkboxes
@@ -1130,7 +1136,7 @@ async def pesquisar_get(
     api_key: str = Depends(get_api_key),
 ):
     """
-    Pesquisa unificada em TODAS as fontes de saúde (15 fontes).
+    Pesquisa unificada em TODAS as fontes de saúde (19 fontes).
 
     Retorna artigos **reais** com:
     - Links funcionais para os documentos originais
