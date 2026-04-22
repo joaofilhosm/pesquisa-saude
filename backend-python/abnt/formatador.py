@@ -69,6 +69,11 @@ class ABNTFormatador:
         "scielo": "SCIELO",
         "lilacs": "LILACS",
         "pubmed": "PUBMED",
+        "cochrane": "COCHRANE",
+        "redalyc": "REDALYC",
+        "bdtd": "BDTD",
+        "capes": "CAPES",
+        "scopus": "SCOPUS",
         "hc-fmusp": "HC-FMUSP",
         "hospital das clínicas": "HC-FMUSP",
         "sírio-libanês": "HOSPITAL SÍRIO-LIBANÊS",
@@ -241,7 +246,10 @@ class ABNTFormatador:
         referencia = f"{autor} {titulo} "
 
         # Periódico: preferir journal real; cair em fonte se não for nome de base
-        fontes_genericas = {'SciELO', 'PubMed', 'LILACS', 'BVS'}
+        fontes_genericas = {
+            'SciELO', 'PubMed', 'LILACS', 'BVS',
+            'Cochrane', 'Redalyc', 'BDTD', 'CAPES', 'Scopus',
+        }
         periodico = artigo.journal or (
             artigo.fonte if artigo.fonte not in fontes_genericas else ""
         )
