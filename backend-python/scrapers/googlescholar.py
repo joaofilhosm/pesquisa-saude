@@ -45,10 +45,10 @@ def _init_scholarly() -> bool:
         print("[GoogleScholar] GOOGLE_SCHOLAR_PROXY não definida. Desabilitando fonte.")
         return False
 
-    # Normalizar formato do proxy para socks5h:// (DNS resolvido no proxy)
-    proxy = proxy.replace("socks5://", "socks5h://", 1)
-    if not proxy.startswith("socks5h://"):
-        proxy = "socks5h://" + proxy
+    # Normalizar formato do proxy para socks5:// (httpx-socks não suporta socks5h)
+    proxy = proxy.replace("socks5h://", "socks5://", 1)
+    if not proxy.startswith("socks5://"):
+        proxy = "socks5://" + proxy
 
     try:
         from scholarly import scholarly as _scholarly, ProxyGenerator  # type: ignore
