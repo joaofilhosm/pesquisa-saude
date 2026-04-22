@@ -5,11 +5,15 @@
 # Obter diretório absoluto do script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Adicionar backend-python ao PYTHONPATH (antes de ativar venv)
+export PYTHONPATH="${SCRIPT_DIR}/backend-python"
+
 # Ativar venv
+cd "${SCRIPT_DIR}"
 . .venv/bin/activate
 
-# Adicionar backend-python ao PYTHONPATH
-export PYTHONPATH="${SCRIPT_DIR}/backend-python:${PYTHONPATH}"
+# Re-exportar PYTHONPATH após ativar venv
+export PYTHONPATH="${SCRIPT_DIR}/backend-python"
 
 # Porta: recebe do repo-panel, usa 8001 se nao definida
 # Nunca usar 3000 ou 8089
