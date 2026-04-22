@@ -34,7 +34,7 @@ if [ -n "$EXISTING_PID" ]; then
 fi
 
 # Iniciar uvicorn
-python -m uvicorn api.main:app \
+.venv/bin/python -m uvicorn api.main:app \
     --host 0.0.0.0 \
     --port "$USE_PORT" \
     --log-level info

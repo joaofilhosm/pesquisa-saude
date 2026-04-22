@@ -32,7 +32,9 @@
       "Bash(python3 *)",
       "Bash(.venv/bin/python3 *)",
       "Bash(netstat -tlnp)",
-      "Bash(.venv/bin/pip show *)"
+      "Bash(.venv/bin/pip show *)",
+      "Bash(./start.sh -l 3099)",
+      "Bash(PORT=3099 ./start.sh)"
     ]
   }
 }
