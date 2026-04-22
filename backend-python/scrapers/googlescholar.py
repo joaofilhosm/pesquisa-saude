@@ -50,6 +50,8 @@ def _init_scholarly() -> bool:
     try:
         from scholarly import scholarly as _scholarly, ProxyGenerator  # type: ignore
         pg = ProxyGenerator()
+        # SingleProxy espera apenas a URL do proxy sem o esquema repetido
+        # Formato: http://host:port ou socks5://host:port
         pg.SingleProxy(http=proxy, https=proxy)
         _scholarly.use_proxy(pg)
         _proxy_url = proxy
@@ -60,8 +62,21 @@ def _init_scholarly() -> bool:
         print("[GoogleScholar] scholarly não instalado. Adicione 'scholarly' ao requirements.txt.")
         return False
     except Exception as e:
+        # Fallback para FreeProxies se SingleProxy falhar
         print(f"[GoogleScholar] Falha ao configurar proxy: {e}")
-        return False
+        print("[GoogleScholar] Tentando fallback com FreeProxies...")
+        try:
+            from scholarly import scholarly as _scholarly, ProxyGenerator  # type: ignore
+            pg = ProxyGenerator()
+            pg.FreeProxies()
+            _scholarly.use_proxy(pg)
+            _proxy_url = "free"
+            _scholarly_ready = True
+            print("[GoogleScholar] FreeProxies configurado (fallback)")
+            return True
+        except Exception as e2:
+            print(f"[GoogleScholar] Fallback também falhou: {e2}")
+            return False
 
 
 # Inicializa ao importar o módulo

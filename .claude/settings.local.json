@@ -23,7 +23,11 @@
       "Bash(kill 26912)",
       "Bash(findstr \":8001\\\\|:3001\")",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(pip show *)",
+      "Bash(.venv/bin/pip install *)",
+      "Bash(/root/repo-panel/data/repos/joaofilhosm__pesquisa-saude/.venv/bin/pip install *)",
+      "Bash(python3 -m pip install --break-system-packages -r backend-python/requirements.txt)"
     ]
   }
 }
