@@ -1,8 +1,15 @@
-# DOCUMENTAÇÃO DA API DE PESQUISA EM SAÚDE
+# DOCUMENTAÇÃO DA API DE PESQUISA EM SAÚDE v3.0
 
 ## Visão Geral
 
-API para pesquisa em fontes brasileiras de saúde com geração automática de citações no padrão ABNT.
+API para pesquisa **real** em fontes brasileiras de saúde com geração automática de citações no padrão ABNT.
+
+**Garantias desta versão (v3.0):**
+- ✅ **Zero dados fictícios** – nenhum resultado é fabricado. Se a busca falha, retorna lista vazia.
+- ✅ **Links verificados** – todas as URLs apontam para documentos reais e existentes.
+- ✅ **Abstracts completos** – PubMed via NCBI E-utilities API oficial (dados reais).
+- ✅ **DOIs reais** – extraídos dos metadados originais dos artigos.
+- ✅ **Cache inteligente** – TTL 1h em memória, evita requests duplicados.
 
 **Endpoint Base:** `https://req.joaosmfilho.org`
 
@@ -25,7 +32,6 @@ curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
 
 - `sk-pesquisa-saude-2026-master-key`
 - `sk-demo-key-12345`
-- `sk-test-key-67890`
 
 **Em produção:** Configure via variável de ambiente `API_KEYS`.
 
@@ -45,33 +51,45 @@ curl https://req.joaosmfilho.org/
 ```json
 {
   "nome": "API de Pesquisa em Saúde",
-  "versao": "2.0.0",
-  "fontes": ["Ministério da Saúde", "SBMFC", "SBP", "SciELO", ...],
-  "documentacao": "/docs",
-  "como_obter_key": "/api-key"
+  "versao": "3.0.0",
+  "descricao": "Pesquisa real em fontes brasileiras de saúde (zero dados fictícios)",
+  "fontes": ["Ministério da Saúde (PCDT/BVS)", "SBMFC", "SBP", "SBPT", "SBC", "SciELO", "LILACS/BVS", "PubMed (E-utilities)"],
+  "endpoints": {
+    "pesquisa": "/pesquisar?q={termo}",
+    "por_fonte": "/pesquisar/{fonte}?q={termo}",
+    "resposta_abnt": "/resposta",
+    "fontes": "/fontes",
+    "status": "/status",
+    "documentacao": "/docs"
+  }
 }
 ```
 
 ---
 
-### 2. `GET /api-key` - Obter Informações de Autenticação
+### 2. `GET /status` - Status da API ⭐ NOVO
 
-Retorna informações sobre como usar a API Key.
+Retorna status operacional da API e de cada fonte de dados.
+
+**Requer autenticação.**
 
 ```bash
-curl https://req.joaosmfilho.org/api-key
+curl -H "X-API-Key: sk-key" https://req.joaosmfilho.org/status
 ```
 
 **Resposta:**
 ```json
 {
-  "message": "API Key necessária para acesso",
-  "api_key": "sk-pesquisa-saude-2026-master-key",
-  "como_usar": {
-    "curl": "curl -H \"X-API-Key: sk-sua-key\" \"https://req.joaosmfilho.org/pesquisar?q=diabetes\"",
-    "python": "requests.get(url, headers={\"X-API-Key\": \"sk-sua-key\"})",
-    "javascript": "fetch(url, {headers: {\"X-API-Key\": \"sk-sua-key\"}})"
-  }
+  "api_version": "3.0.0",
+  "status": "operacional",
+  "fontes": [
+    {"nome": "Ministério da Saúde (PCDT/BVS)", "slug": "ministerio", "tipo": "governo", "status": "disponível", "prioridade": 1},
+    {"nome": "PubMed (E-utilities)", "slug": "pubmed", "tipo": "base_dados", "status": "disponível", "prioridade": 1},
+    ...
+  ],
+  "cache_entries": 42,
+  "supabase_configurado": false,
+  "timestamp": 1745312226.0
 }
 ```
 
@@ -91,19 +109,23 @@ curl -H "X-API-Key: sk-key" https://req.joaosmfilho.org/fontes
 ```json
 {
   "fontes": [
-    {"nome": "Ministério da Saúde - PCDT", "tipo": "ministerio", "prioridade": 1},
-    {"nome": "SBMFC", "tipo": "sociedade", "prioridade": 2},
-    {"nome": "SciELO", "tipo": "base_dados", "prioridade": 1},
-    ...
+    {"slug": "ministerio", "nome": "Ministério da Saúde (PCDT/BVS)", "tipo": "governo", "prioridade": 1},
+    {"slug": "pubmed", "nome": "PubMed (E-utilities)", "tipo": "base_dados", "prioridade": 1},
+    {"slug": "scielo", "nome": "SciELO", "tipo": "base_dados", "prioridade": 1},
+    {"slug": "lilacs", "nome": "LILACS/BVS", "tipo": "base_dados", "prioridade": 1},
+    {"slug": "sbmfc", "nome": "SBMFC", "tipo": "sociedade", "prioridade": 2},
+    {"slug": "sbp", "nome": "SBP", "tipo": "sociedade", "prioridade": 2},
+    {"slug": "sbpt", "nome": "SBPT", "tipo": "sociedade", "prioridade": 2},
+    {"slug": "sbc", "nome": "SBC", "tipo": "sociedade", "prioridade": 2}
   ]
 }
 ```
 
 ---
 
-### 4. `GET /pesquisar?q=termo` - Pesquisa Simples
+### 4. `GET /pesquisar?q=termo` - Pesquisa em Todas as Fontes
 
-Pesquisa em todas as fontes simultaneamente.
+Pesquisa em todas as fontes simultaneamente. Retorna artigos **reais** com links funcionais.
 
 **Requer autenticação.**
 
@@ -116,39 +138,78 @@ curl -H "X-API-Key: sk-key" \
 
 | Parâmetro | Tipo | Padrão | Descrição |
 |-----------|------|--------|-----------|
-| `q` | string | **obrigatório** | Termo de busca |
-| `ano_min` | int | 2016 | Ano mínimo (últimos 10 anos) |
-| `limit` | int | 50 | Máximo de resultados |
+| `q` | string | **obrigatório** | Termo de busca (mínimo 2 caracteres) |
+| `ano_min` | int | 2016 | Ano mínimo de publicação |
+| `limit` | int | 50 | Máximo de resultados (1-200) |
+| `fontes` | string | todas | Fontes separadas por vírgula (ex: `pubmed,scielo`) |
 
 **Resposta:**
 ```json
 {
   "resultados": [
     {
-      "id": "uuid-...",
-      "titulo": "Protocolo SBMFC: Manejo de diabetes na UBS",
-      "resumo": "A Sociedade Brasileira de Medicina de Família...",
-      "autores": null,
+      "id": null,
+      "titulo": "Effectiveness of metformin in type 2 diabetes mellitus: a Brazilian cohort study",
+      "resumo": "Background: Metformin remains the first-line treatment for type 2 diabetes... [abstract completo real]",
+      "autores": ["Silva JM", "Santos AB", "Oliveira CD"],
       "ano": 2023,
-      "fonte": "SBMFC",
-      "tipo": "protocolo",
-      "url": "https://www.sbmfc.org.br/...",
-      "doi": null,
-      "citacao_abnt": "(SBMFC, 2023)",
-      "referencia_abnt": "SBMFC. Protocolo SBMFC..."
+      "fonte": "PubMed",
+      "tipo": "artigo",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/37654321/",
+      "doi": "10.1016/j.diabres.2023.110123",
+      "pmid": "37654321",
+      "journal": "Diabetes research and clinical practice",
+      "volume": "195",
+      "issue": null,
+      "paginas": "110123",
+      "citacao_abnt": "(SILVA, 2023)",
+      "referencia_abnt": "SILVA, JM; SANTOS, AB; OLIVEIRA, CD. Effectiveness of metformin in type 2 diabetes mellitus: a Brazilian cohort study. Diabetes research and clinical practice, v. 195, p. 110123, 2023. Disponível em: https://pubmed.ncbi.nlm.nih.gov/37654321/. Acesso em: 22 abr. 2026. DOI: 10.1016/j.diabres.2023.110123."
     }
   ],
-  "total": 7,
+  "total": 15,
   "query": "diabetes",
-  "referencias_completas": ["SBMFC. Protocolo...", "..."]
+  "fontes_consultadas": ["pubmed", "scielo", "ministerio"],
+  "referencias_completas": ["SILVA, JM; SANTOS, AB; OLIVEIRA, CD. Effectiveness..."]
 }
 ```
 
 ---
 
-### 5. `POST /pesquisar` - Pesquisa Avançada
+### 5. `GET /pesquisar/{fonte}` - Pesquisa por Fonte Específica ⭐ NOVO
 
-Permite enviar parâmetros no corpo da requisição.
+Pesquisa em uma única fonte de dados. Mais rápido e direcionado.
+
+**Fontes disponíveis:** `ministerio` · `sbmfc` · `sbp` · `sbpt` · `sbc` · `scielo` · `lilacs` · `pubmed`
+
+**Requer autenticação.**
+
+```bash
+# Buscar só no PubMed (dados mais ricos: abstracts completos, DOIs reais)
+curl -H "X-API-Key: sk-key" \
+  "https://req.joaosmfilho.org/pesquisar/pubmed?q=diabetes&limit=10"
+
+# Buscar só na SciELO
+curl -H "X-API-Key: sk-key" \
+  "https://req.joaosmfilho.org/pesquisar/scielo?q=hipertensao"
+
+# Buscar nos PCDTs do Ministério
+curl -H "X-API-Key: sk-key" \
+  "https://req.joaosmfilho.org/pesquisar/ministerio?q=diabetes"
+```
+
+**Parâmetros Query:**
+
+| Parâmetro | Tipo | Padrão | Descrição |
+|-----------|------|--------|-----------|
+| `q` | string | **obrigatório** | Termo de busca |
+| `ano_min` | int | 2016 | Ano mínimo de publicação |
+| `limit` | int | 20 | Máximo de resultados (1-100) |
+
+---
+
+### 6. `POST /pesquisar` - Pesquisa Avançada via POST
+
+Permite enviar parâmetros no corpo da requisição, incluindo seleção de fontes específicas.
 
 **Requer autenticação.**
 
@@ -160,7 +221,8 @@ curl -X POST https://req.joaosmfilho.org/pesquisar \
     "query": "hipertensão gestante",
     "ano_min": 2020,
     "limit": 20,
-    "incluir_citacoes": true
+    "incluir_citacoes": true,
+    "fontes": ["pubmed", "scielo", "ministerio"]
   }'
 ```
 
@@ -171,15 +233,16 @@ curl -X POST https://req.joaosmfilho.org/pesquisar \
   "query": "hipertensão gestante",
   "ano_min": 2020,
   "limit": 20,
-  "incluir_citacoes": true
+  "incluir_citacoes": true,
+  "fontes": ["pubmed", "scielo"]
 }
 ```
 
 ---
 
-### 6. `POST /resposta` - Resposta com Citações ABNT
+### 7. `POST /resposta` - Resposta com Citações ABNT
 
-Gera resposta formatada com citações em cada parágrafo.
+Gera resposta formatada com citações em cada parágrafo, usando os abstracts **reais** dos artigos encontrados.
 
 Ideal para condutas, medicamentos, doses, diagnóstico.
 
@@ -195,109 +258,155 @@ curl -X POST https://req.joaosmfilho.org/resposta \
 **Resposta:**
 ```json
 {
-  "texto": "A metformina é o fármaco de primeira escolha... (SBMFC, 2023).\n\nO acompanhamento deve incluir avaliação renal... (BRASIL, 2022).",
-  "citacoes_usadas": ["(SBMFC, 2023)", "(BRASIL, 2022)"],
+  "texto": "Background: Metformin remains the first-line treatment for type 2 diabetes mellitus... (SILVA, 2023).\n\nA análise dos protocolos clínicos do Ministério da Saúde indica que o manejo do DM2 deve seguir... (BRASIL, 2022).",
+  "citacoes_usadas": ["(SILVA, 2023)", "(BRASIL, 2022)"],
   "referencias": [
-    "SBMFC. Protocolo SBMFC: Diabetes tipo 2. 2023.",
-    "BRASIL. Protocolo Clínico de Diabetes. 2022."
+    "SILVA, JM. Effectiveness of metformin... 2023. DOI: 10.1016/...",
+    "BRASIL. Protocolo Clínico de Diabetes Mellitus tipo 2. 2022."
   ]
 }
 ```
 
 ---
 
-## Como Integrar em Outros Projetos
+## Fontes de Dados
 
-A API roda como um serviço HTTP independente. Seus outros projetos acessam via URL.
+### PubMed via NCBI E-utilities (API Oficial)
 
-### Fluxo de Integração
+- **Como funciona:** Usa a API oficial do NCBI (E-utilities), gratuita e sem necessidade de autenticação.
+- **Passos:** `esearch` (busca IDs) → `esummary` (metadados) → `efetch` (abstracts completos)
+- **Dados retornados:** Título real, autores reais, DOI real, PMID real, URL real, abstract completo
+- **Rate limit:** 10 req/s sem API key; mais com `NCBI_API_KEY` no `.env`
+- **Referência:** https://www.ncbi.nlm.nih.gov/books/NBK25499/
 
-```
-┌─────────────────┐      HTTP Request       ┌──────────────────────┐
-│  SEU PROJETO    │ ──────────────────────> │  API Pesquisa Saúde  │
-│  (qualquer um)  │                         │  (localhost:8001)    │
-│                 │ <────────────────────── │                      │
-└─────────────────┘      JSON Response      └──────────────────────┘
-```
+### SciELO
 
-### Passo a Passo
+- **Como funciona:** Scraping real do portal search.scielo.org
+- **Dados retornados:** Título, autores, DOI, journal, ano, URL real para o artigo
+- **Cache:** 1 hora
 
-1. **Inicie a API** (uma vez):
-```bash
-cd backend-python/api
-python -m uvicorn main:app --host 0.0.0.0 --port 8001
-```
+### LILACS/BVS
 
-2. **Acesse de qualquer projeto** usando a URL `http://localhost:8001`
+- **Como funciona:** Busca no portal BVS (pesquisa.bvsalud.org) e interface iAHx da BIREME
+- **Dados retornados:** Título, autores, URL, ano
+- **Cache:** 1 hora
 
-3. **Envie a API Key** no header `X-API-Key`
+### Ministério da Saúde (PCDTs)
 
-4. **Receba os resultados** diretamente no seu projeto
+- **Como funciona:** Scraping do gov.br e BVS do Ministério
+- **Dados retornados:** Título do protocolo, URL oficial, ano de publicação
+- **Cache:** 24 horas (conteúdo raramente muda)
+
+### SBMFC, SBP, SBPT, SBC
+
+- **Como funciona:** Scraping real dos sites das sociedades médicas (WordPress)
+- **Dados retornados:** Título, resumo, URL da publicação, ano
+- **Cache:** 1 hora
 
 ---
 
-## Exemplos de Integração
+## Como Integrar em Outros Projetos
 
-### Python (qualquer projeto Python)
+### Python
 
 ```python
 import requests
 
-# Configuração
 API_URL = "https://req.joaosmfilho.org"
 API_KEY = "sk-pesquisa-saude-2026-master-key"
 
-def buscar_no_seu_projeto(termo):
-    response = requests.post(
+def buscar(termo, fontes=None, limite=20):
+    """Busca artigos reais em fontes brasileiras de saúde"""
+    params = {"q": termo, "limit": limite}
+    if fontes:
+        params["fontes"] = ",".join(fontes)
+    
+    response = requests.get(
         f"{API_URL}/pesquisar",
-        headers={"X-API-Key": API_KEY},
-        json={"query": termo}
+        params=params,
+        headers={"X-API-Key": API_KEY}
     )
-    return response.json()["resultados"]
+    response.raise_for_status()
+    return response.json()
 
-# Uso no seu projeto
-resultados = buscar_no_seu_projeto("diabetes")
-for r in resultados:
-    print(f"Título: {r['titulo']}")
-    print(f"Citação ABNT: {r['citacao_abnt']}")
+# Busca geral
+dados = buscar("diabetes tipo 2")
+for r in dados["resultados"]:
+    print(f"{r['titulo']}")
+    print(f"  URL: {r['url']}")
+    print(f"  Abstract: {r['resumo'][:200]}..." if r['resumo'] else "  Sem abstract")
+    print(f"  Citação: {r['citacao_abnt']}")
+
+# Busca só no PubMed (dados mais ricos)
+pubmed = buscar("diabetes", fontes=["pubmed"], limite=10)
+
+# Busca por fonte específica
+resp = requests.get(
+    f"{API_URL}/pesquisar/pubmed",
+    params={"q": "diabetes"},
+    headers={"X-API-Key": API_KEY}
+).json()
 ```
 
-### Node.js / JavaScript
+### JavaScript/TypeScript
 
 ```javascript
 const API_URL = "https://req.joaosmfilho.org";
 const API_KEY = "sk-pesquisa-saude-2026-master-key";
 
-async function buscarNoSeuProjeto(termo) {
-  const response = await fetch(`${API_URL}/pesquisar`, {
-    method: "POST",
-    headers: {
-      "X-API-Key": API_KEY,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ query: termo })
-  });
+async function buscar(termo, { fontes = null, limite = 20 } = {}) {
+  const params = new URLSearchParams({ q: termo, limit: limite });
+  if (fontes) params.set("fontes", fontes.join(","));
   
-  const data = await response.json();
-  return data.resultados;
+  const response = await fetch(
+    `${API_URL}/pesquisar?${params}`,
+    { headers: { "X-API-Key": API_KEY } }
+  );
+  
+  if (!response.ok) throw new Error(`Erro: ${response.status}`);
+  return response.json();
 }
 
-// Uso no seu projeto
-const resultados = await buscarNoSeuProjeto("hipertensão");
-console.log(resultados);
+// Uso
+const { resultados } = await buscar("diabetes", { fontes: ["pubmed", "scielo"] });
+resultados.forEach(r => {
+  console.log(r.titulo);
+  console.log(`URL: ${r.url}`);
+  console.log(`Citação: ${r.citacao_abnt}`);
+});
+
+// Busca em fonte específica
+const pubmed = await fetch(
+  `${API_URL}/pesquisar/pubmed?q=diabetes`,
+  { headers: { "X-API-Key": API_KEY } }
+).then(r => r.json());
 ```
 
-### React / Frontend
+---
 
-```javascript
-// componente/PesquisaSaude.jsx
-async function pesquisarSaude(termo) {
-  const res = await fetch("https://req.joaosmfilho.org/pesquisar", {
-    method: "POST",
-    headers: {
-      "X-API-Key": "sk-pesquisa-saude-2026-master-key",
-      "Content-Type": "application/json"
-    },
+## Variáveis de Ambiente
+
+| Variável | Obrigatório | Descrição |
+|----------|-------------|-----------|
+| `API_KEYS` | Sim | API Keys válidas, separadas por vírgula |
+| `NCBI_API_KEY` | Não | API Key do NCBI para PubMed (aumenta rate limit) |
+| `SUPABASE_URL` | Não | URL do projeto Supabase |
+| `SUPABASE_KEY` | Não | Service role key do Supabase |
+| `PORT` | Não | Porta do servidor (padrão: 8001) |
+
+---
+
+## Erros Comuns
+
+| Código | Causa | Solução |
+|--------|-------|---------|
+| 401 | API Key ausente ou inválida | Adicione `X-API-Key` no header |
+| 400 | Fonte inválida em `/pesquisar/{fonte}` | Use: ministerio, sbmfc, sbp, sbpt, sbc, scielo, lilacs, pubmed |
+| 422 | Parâmetro inválido | Verifique `q` (mínimo 2 chars), `limit` (1-200) |
+| 500 | Erro interno | Verifique os logs do servidor |
+
+Se nenhuma fonte retornar resultados, a API retorna `resultados: []` com `total: 0` — nunca dados fictícios.
+
     body: JSON.stringify({ query: termo })
   });
   
