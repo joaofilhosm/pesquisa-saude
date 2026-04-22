@@ -69,7 +69,8 @@
       "Bash(kill 634308)",
       "Bash(echo \"\")",
       "Bash(PYTHONPATH=\"/data/repos/joaofilhosm__pesquisa-saude/backend-python\" GOOGLE_SCHOLAR_PROXY=\"socks5://127.0.0.1:1080\" nohup .venv/bin/python -m uvicorn api.main:app --host 0.0.0.0 --port 3099 --log-level info)",
-      "Bash(pkill -f \"pesquisa-saude\")"
+      "Bash(pkill -f \"pesquisa-saude\")",
+      "Bash(kill 709263)"
     ]
   }
 }
