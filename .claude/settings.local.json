@@ -65,7 +65,8 @@
       "Bash(kill 622372)",
       "Bash(bash ./start.sh -l 3099)",
       "Bash(/data/repos/joaofilhosm__pesquisa-saude/.venv/bin/pip show *)",
-      "Bash(/data/repos/joaofilhosm__pesquisa-saude/.venv/bin/pip uninstall *)"
+      "Bash(/data/repos/joaofilhosm__pesquisa-saude/.venv/bin/pip uninstall *)",
+      "Bash(kill 634308)"
     ]
   }
 }
