@@ -34,7 +34,10 @@
       "Bash(netstat -tlnp)",
       "Bash(.venv/bin/pip show *)",
       "Bash(./start.sh -l 3099)",
-      "Bash(PORT=3099 ./start.sh)"
+      "Bash(PORT=3099 ./start.sh)",
+      "Bash(kill 504591)",
+      "Bash(kill 508515)",
+      "Bash(.venv/bin/python *)"
     ]
   }
 }
