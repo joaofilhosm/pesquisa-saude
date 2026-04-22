@@ -42,6 +42,10 @@ from scrapers.capes import CapesScraper
 from scrapers.semanticscholar import SemanticScholarScraper
 from scrapers.openalex import OpenAlexScraper
 from scrapers.googlescholar import GoogleScholarScraper
+from scrapers.serpapi import SerpAPIScraper
+from scrapers.searchapi import SearchApiScraper
+from scrapers.scholarapi import ScholarAPIScraper
+from scrapers.serply import SerplyScraper
 from scrapers.cache import cache_medio, cache_curto
 from abnt.formatador import ABNTFormatador, Artigo, formatador
 
@@ -144,6 +148,10 @@ FONTES_CONFIG = [
     {"slug": "semanticscholar", "nome": "Semantic Scholar (Allen AI)", "tipo": "base_dados", "prioridade": 1},
     {"slug": "openalex", "nome": "OpenAlex (OurResearch)", "tipo": "base_dados", "prioridade": 1},
     {"slug": "googlescholar", "nome": "Google Scholar (via proxy SOCKS5)", "tipo": "base_dados", "prioridade": 2},
+    {"slug": "serpapi", "nome": "Google Scholar (SerpAPI)", "tipo": "api_paga", "prioridade": 1},
+    {"slug": "searchapi", "nome": "Google Scholar (SearchApi.io)", "tipo": "api_paga", "prioridade": 1},
+    {"slug": "scholarapi", "nome": "Google Scholar (ScholarAPI.net)", "tipo": "api_paga", "prioridade": 1},
+    {"slug": "serply", "nome": "Google Scholar (Serply.io)", "tipo": "api_paga", "prioridade": 1},
 ]
 
 # === Lifespan ===
@@ -166,6 +174,10 @@ async def lifespan(app: FastAPI):
         "semanticscholar": SemanticScholarScraper(),
         "openalex": OpenAlexScraper(),
         "googlescholar": GoogleScholarScraper(),
+        "serpapi": SerpAPIScraper(),
+        "searchapi": SearchApiScraper(),
+        "scholarapi": ScholarAPIScraper(),
+        "serply": SerplyScraper(),
     }
     yield
 
@@ -179,7 +191,7 @@ app = FastAPI(
 Esta API realiza pesquisas **reais** em múltiplas fontes de saúde,
 retornando artigos verídicos com links funcionais, DOIs reais e abstracts completos.
 
-### Fontes de Dados (15 fontes — todas gratuitas)
+### Fontes de Dados (19 fontes)
 
 **Bases de Dados Internacionais**
 - **PubMed** – NCBI E-utilities API oficial · abstract completo · DOI real · PMID
@@ -187,7 +199,11 @@ retornando artigos verídicos com links funcionais, DOIs reais e abstracts compl
 - **SciELO** – search.scielo.org · artigos científicos em português/inglês
 - **Semantic Scholar** – Allen AI Graph API · +200 M papers · citationCount · `S2_API_KEY` opcional e gratuita
 - **OpenAlex** – OurResearch · +250 M papers · totalmente aberto · sem autenticação
-- **Google Scholar** – via `scholarly` + proxy SOCKS5 local · requer `GOOGLE_SCHOLAR_PROXY`
+- **Google Scholar (scholarly)** – via `scholarly` + proxy SOCKS5 local · requer `GOOGLE_SCHOLAR_PROXY`
+- **Google Scholar (SerpAPI)** – API paga · sem bloqueios · requer `SERPAPI_KEY`
+- **Google Scholar (SearchApi.io)** – API paga · sem bloqueios · requer `SEARCHAPI_KEY`
+- **Google Scholar (ScholarAPI.net)** – API especializada · requer `SCHOLARAPI_KEY`
+- **Google Scholar (Serply.io)** – API confiável · requer `SERPLY_API_KEY`
 
 **Bases de Dados Nacionais / Latino-Americanas**
 - **LILACS/BVS** – pesquisa.bvsalud.org · literatura latino-americana (BIREME)
