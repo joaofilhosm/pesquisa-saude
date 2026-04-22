@@ -40,7 +40,8 @@
       "Bash(.venv/bin/python *)",
       "Bash(mkdir -p /data/repos)",
       "Bash(ln -sfn /root/repo-panel/data/repos/joaofilhosm__pesquisa-saude /data/repos/joaofilhosm__pesquisa-saude)",
-      "Bash(pkill -f \"uvicorn.*3099\")"
+      "Bash(pkill -f \"uvicorn.*3099\")",
+      "Bash(PYTHONPATH=/root/repo-panel/data/repos/joaofilhosm__pesquisa-saude/backend-python .venv/bin/python -m uvicorn api.main:app --host 0.0.0.0 --port 3099 --log-level info)"
     ]
   }
 }
