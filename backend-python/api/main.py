@@ -84,6 +84,7 @@ class ArtigoResponse(BaseModel):
     volume: Optional[str] = None
     issue: Optional[str] = None
     paginas: Optional[str] = None
+    keywords: Optional[List[str]] = None
     citacao_abnt: Optional[str] = None
     referencia_abnt: Optional[str] = None
 
@@ -916,6 +917,10 @@ _PLAYGROUND_HTML = """<!DOCTYPE html>
           ? `<div class="abstract" onclick="toggleAbstract(this)" title="Clique para expandir">${esc(art.resumo)}</div>`
           : "";
 
+        const keywordsHtml = art.keywords && art.keywords.length
+          ? `<div style="font-size:.72rem;color:var(--text-muted);margin-top:6px;">🏷️ ${art.keywords.map(k => esc(k)).join(" · ")}</div>`
+          : "";
+
         const abntHtml = art.referencia_abnt
           ? `<div class="abnt" onclick="copyText(${JSON.stringify(art.referencia_abnt)})" title="Clique para copiar">
                <span style="font-weight:600;color:var(--yellow);">${esc(art.citacao_abnt || "")}</span>
@@ -932,6 +937,7 @@ _PLAYGROUND_HTML = """<!DOCTYPE html>
           ${authorsHtml ? `<div style="font-size:.78rem;color:var(--text-muted);margin-bottom:6px;">${authorsHtml}</div>` : ""}
           <div class="meta">${chips.join("")}</div>
           ${abstractHtml}
+          ${keywordsHtml}
           ${abntHtml}
         `;
         list.appendChild(card);
@@ -1169,10 +1175,6 @@ async def _pesquisar(request: PesquisaRequest) -> PesquisaResponse:
 
     for r in resultados:
         artigo = Artigo.from_dict(r)
-        # Preencher dados extras no Artigo
-        artigo.volume = r.get("volume", "") or ""
-        artigo.numero = r.get("issue", "") or ""
-        artigo.paginas = r.get("paginas", "") or ""
 
         citacao_abnt = None
         referencia_abnt = None
@@ -1200,6 +1202,7 @@ async def _pesquisar(request: PesquisaRequest) -> PesquisaResponse:
             volume=r.get("volume"),
             issue=r.get("issue"),
             paginas=r.get("paginas"),
+            keywords=r.get("keywords") or None,
             citacao_abnt=citacao_abnt,
             referencia_abnt=referencia_abnt,
         ))
