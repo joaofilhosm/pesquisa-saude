@@ -60,7 +60,12 @@
       "Bash(pip list *)",
       "Bash(pip3 list *)",
       "Bash(pip uninstall *)",
-      "Bash(kill 613613 613601)"
+      "Bash(kill 613613 613601)",
+      "Bash(awk '{print $2}')",
+      "Bash(kill 622372)",
+      "Bash(bash ./start.sh -l 3099)",
+      "Bash(/data/repos/joaofilhosm__pesquisa-saude/.venv/bin/pip show *)",
+      "Bash(/data/repos/joaofilhosm__pesquisa-saude/.venv/bin/pip uninstall *)"
     ]
   }
 }
