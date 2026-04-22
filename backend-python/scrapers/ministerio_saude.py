@@ -25,6 +25,9 @@ class MinisterioSaudeScraper:
     # BVS do Ministério da Saúde
     BVS_URL = "https://bvsms.saude.gov.br"
 
+    # Palavras-chave que identificam documentos do tipo PCDT/protocolo
+    PCDT_KEYWORDS = frozenset(['protocolo', 'diretriz', 'pcdt', 'terapêutica', 'terapeutica'])
+
     def __init__(self):
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -153,7 +156,7 @@ class MinisterioSaudeScraper:
                 continue
 
             # Filtrar apenas links que parecem ser documentos/PDFs de PCDT
-            if not any(k in titulo.lower() for k in ['protocolo', 'diretriz', 'pcdt', 'terapêutica']):
+            if not any(k in titulo.lower() for k in self.PCDT_KEYWORDS):
                 continue
 
             if href and not href.startswith('http'):

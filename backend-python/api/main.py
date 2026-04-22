@@ -377,8 +377,9 @@ async def _pesquisar(request: PesquisaRequest) -> PesquisaResponse:
         doi = r.get("doi") or ""
         titulo_key = (r.get("titulo", "")[:80]).lower().strip()
 
-        # Pular URLs claramente inválidas
+        # Pular URLs claramente inválidas (segurança extra, não deveria ocorrer com scrapers reais)
         if url and ("mock" in url.lower() or "undefined" in url.lower()):
+            print(f"Aviso: URL inválida descartada: {url}")
             continue
 
         if url and url in vistos_url:
@@ -470,7 +471,8 @@ async def _pesquisar(request: PesquisaRequest) -> PesquisaResponse:
         total=len(resultados_formatados),
         query=request.query,
         fontes_consultadas=fontes_consultadas,
-        referencias_completas=list(dict.fromkeys(referencias)),  # remover duplicatas mantendo ordem
+        # dict.fromkeys preserva ordem de inserção (garantido desde Python 3.7)
+        referencias_completas=list(dict.fromkeys(referencias)),
     )
 
 @app.post("/resposta", response_model=RespostaPesquisa, tags=["Pesquisa"])

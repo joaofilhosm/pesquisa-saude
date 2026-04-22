@@ -26,9 +26,17 @@ class PubMedScraper:
 
     EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
     PUBMED_URL = "https://pubmed.ncbi.nlm.nih.gov"
+    MAX_ABSTRACT_LENGTH = 3000  # caracteres máximos para o abstract
+
+    # Intervalo mínimo entre requests ao NCBI (segundos)
+    # Sem API key: 10 req/s → 0.11s de intervalo
+    # Com API key: pode ser reduzido (taxa limite maior no NCBI)
+    _SLEEP_NO_KEY = 0.11
+    _SLEEP_WITH_KEY = 0.05
 
     def __init__(self):
         self.api_key = os.getenv("NCBI_API_KEY")
+        self._rate_limit_sleep = self._SLEEP_WITH_KEY if self.api_key else self._SLEEP_NO_KEY
         self.headers = {
             "User-Agent": "PesquisaSaude/3.0 (https://github.com/joaofilhosm/pesquisa-saude)",
         }
@@ -135,11 +143,11 @@ class PubMedScraper:
                 abstract_linhas.append(linha)
 
         if abstract_linhas:
-            return ' '.join(l.strip() for l in abstract_linhas if l.strip())[:3000]
+            return ' '.join(l.strip() for l in abstract_linhas if l.strip())[:self.MAX_ABSTRACT_LENGTH]
 
         # Fallback: pular as primeiras 2 linhas (título + autores) e usar o restante
         texto_corpo = '\n'.join(linhas[2:]).strip()
-        return texto_corpo[:3000]
+        return texto_corpo[:self.MAX_ABSTRACT_LENGTH]
 
     def _parse_summary(self, data: Dict) -> Optional[Dict[str, Any]]:
         """Converte um item do esummary para dicionário padronizado"""
@@ -227,7 +235,7 @@ class PubMedScraper:
                 tarefas = []
                 for pmid in ids_com_abstract:
                     tarefas.append(self._efetch_abstract(pmid))
-                    await asyncio.sleep(0.11)  # ~9 req/s para ficar dentro do limite
+                    await asyncio.sleep(self._rate_limit_sleep)
 
                 abstracts = await asyncio.gather(*tarefas, return_exceptions=True)
                 for i, abstract in enumerate(abstracts):

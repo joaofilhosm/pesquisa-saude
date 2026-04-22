@@ -91,6 +91,9 @@ class SciELOScraper:
             if chave and chave not in vistos:
                 vistos.add(chave)
                 unicos.append(r)
+            elif not chave:
+                # Sem identificador único, incluir mesmo assim
+                unicos.append(r)
 
         return unicos[:20]
 

@@ -6,6 +6,10 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import re
 
+# Compilar regex uma vez no módulo (performance)
+_RE_INICIAIS = re.compile(r'^[A-Z]{1,3}$')
+_RE_ANO = re.compile(r'(20\d{2})')
+
 
 @dataclass
 class Artigo:
@@ -137,7 +141,7 @@ class ABNTFormatador:
 
         # Formato PubMed: "Silva JM" – última parte são iniciais maiúsculas
         ultima = partes[-1]
-        if re.match(r'^[A-Z]{1,3}$', ultima):
+        if _RE_INICIAIS.match(ultima):
             # Sobrenome é tudo antes das iniciais
             return ' '.join(partes[:-1]).upper()
 
@@ -180,7 +184,7 @@ class ABNTFormatador:
             if len(partes) >= 2:
                 ultima = partes[-1]
                 # Iniciais: string com 1-3 maiúsculas (sem pontos)
-                if re.match(r'^[A-Z]{1,3}$', ultima):
+                if _RE_INICIAIS.match(ultima):
                     sobrenome = ' '.join(partes[:-1]).upper()
                     autores_formatados.append(f"{sobrenome}, {ultima}")
                     continue

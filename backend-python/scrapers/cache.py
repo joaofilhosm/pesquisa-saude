@@ -14,10 +14,21 @@ class TTLCache:
         self._cache: dict = {}
         self._ttl = ttl_seconds
         self._lock = Lock()
+        self._get_count = 0  # Para acionar limpeza periódica
+        self._PURGE_EVERY = 100  # Limpar a cada N gets
 
     def get(self, key: str) -> Optional[Any]:
         """Retorna valor do cache, ou None se expirado/inexistente"""
         with self._lock:
+            self._get_count += 1
+            # Limpeza periódica automática de entradas expiradas
+            if self._get_count >= self._PURGE_EVERY:
+                self._get_count = 0
+                now = time.monotonic()
+                expired = [k for k, (_, exp) in self._cache.items() if now > exp]
+                for k in expired:
+                    del self._cache[k]
+
             item = self._cache.get(key)
             if item is None:
                 return None
