@@ -45,20 +45,25 @@ def _init_scholarly() -> bool:
         print("[GoogleScholar] GOOGLE_SCHOLAR_PROXY não definida. Desabilitando fonte.")
         return False
 
-    # socks5:// → socks5h:// para DNS resolvido no proxy (mais seguro)
+    # Normalizar formato do proxy para socks5h:// (DNS resolvido no proxy)
     proxy = proxy.replace("socks5://", "socks5h://", 1)
+    if not proxy.startswith("socks5h://"):
+        proxy = "socks5h://" + proxy
 
     try:
         from scholarly import scholarly as _scholarly, ProxyGenerator  # type: ignore
         pg = ProxyGenerator()
-        # Usar FreeProxies como fallback ou ScraperAPI se disponível
-        # SingleProxy tem bugs com versões recentes do urllib3
-        pg.FreeProxies()
-        _scholarly.use_proxy(pg)
-        _proxy_url = "free"
-        _scholarly_ready = True
-        print(f"[GoogleScholar] FreeProxies configurado (scholarly {getattr(_scholarly, '__version__', 'unknown')})")
-        return True
+        # Configurar proxy SOCKS5 local (ex.: socks5h://127.0.0.1:1080)
+        success = pg.SingleProxy(http=proxy, https=proxy)
+        if success:
+            _scholarly.use_proxy(pg)
+            _proxy_url = proxy
+            _scholarly_ready = True
+            print(f"[GoogleScholar] Proxy configurado: {proxy}")
+            return True
+        else:
+            print(f"[GoogleScholar] Falha ao configurar proxy: {proxy}")
+            return False
     except ImportError:
         print("[GoogleScholar] scholarly não instalado. Adicione 'scholarly' ao requirements.txt.")
         return False
