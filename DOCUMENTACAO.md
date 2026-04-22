@@ -60,6 +60,7 @@ curl https://req.joaosmfilho.org/
     "resposta_abnt": "/resposta",
     "fontes": "/fontes",
     "status": "/status",
+    "playground": "/playground",
     "documentacao": "/docs"
   }
 }
@@ -67,7 +68,29 @@ curl https://req.joaosmfilho.org/
 
 ---
 
-### 2. `GET /status` - Status da API ⭐ NOVO
+### 2. `GET /playground` - Interface Visual Interativa ⭐ NOVO
+
+Página HTML auto-contida para testar a API em tempo real, diretamente no browser, sem curl ou código.
+
+Sem autenticação necessária para acessar a página — a API Key é inserida no formulário.
+
+```bash
+# Abra no browser:
+open https://req.joaosmfilho.org/playground
+```
+
+**Funcionalidades:**
+- Campo de busca com exemplos rápidos (diabetes, hipertensão, DPOC…)
+- Seleção de fontes com checkboxes (GOV / SOC / DB)
+- Controles de ano mínimo e limite de resultados
+- Cards com título (link clicável), autores, DOI, PMID, journal, abstract expansível
+- Citações ABNT copiáveis com um clique
+- Lista de referências bibliográficas completas
+- Spinner de loading, barra de status (sucesso / erro)
+
+---
+
+### 3. `GET /status` - Status da API
 
 Retorna status operacional da API e de cada fonte de dados.
 

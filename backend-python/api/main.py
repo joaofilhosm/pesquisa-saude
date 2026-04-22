@@ -157,26 +157,290 @@ app = FastAPI(
 Esta API realiza pesquisas **reais** em múltiplas fontes brasileiras de saúde,
 retornando artigos verídicos com links funcionais, DOIs reais e abstracts completos.
 
-### Fontes de Dados Reais
-- **Ministério da Saúde** – PCDTs e BVS (gov.br)
-- **SBMFC, SBP, SBPT, SBC** – Protocolos e diretrizes das sociedades médicas
-- **SciELO** – search.scielo.org (artigos científicos)
-- **LILACS/BVS** – pesquisa.bvsalud.org (literatura latino-americana)
-- **PubMed** – NCBI E-utilities API oficial (artigos internacionais)
+### Fontes de Dados (8 fontes)
+- **PubMed** – NCBI E-utilities API oficial · abstract completo · DOI real · PMID
+- **SciELO** – search.scielo.org · artigos científicos em português/inglês
+- **LILACS/BVS** – pesquisa.bvsalud.org · literatura latino-americana (BIREME)
+- **Ministério da Saúde** – PCDTs e BVS (gov.br) · protocolos oficiais
+- **SBMFC, SBP, SBPT, SBC** – protocolos e diretrizes das sociedades médicas
 
 ### Garantias
-- **Zero dados fictícios**: nenhum resultado é fabricado
+- **Zero dados fictícios**: nenhum resultado é fabricado — lista vazia se sem resultados
 - **Links reais**: todas as URLs apontam para documentos existentes
 - **Abstracts completos**: via NCBI E-utilities para PubMed
 - **DOIs verificados**: extraídos dos metadados reais dos artigos
-- **Cache inteligente**: respostas em cache por 1 hora para performance
+- **Cache inteligente**: curto (5 min) · médio (1 h para buscas) · longo (24 h para PCDTs)
 
 ### Autenticação
-Envie sua API Key no header: `X-API-Key`
+Envie sua API Key no header `X-API-Key`:
 
 ```bash
 curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \\
   "https://req.joaosmfilho.org/pesquisar?q=diabetes"
+```
+
+### Playground
+Teste a API diretamente no browser, sem curl ou código:
+👉 [/playground](https://req.joaosmfilho.org/playground)
+
+---
+
+## 🎨 Integração com Lovable — Prompt Copia e Cola
+
+Cole o bloco abaixo no [Lovable](https://lovable.dev) para integrar a API ao seu projeto:
+
+```
+Adicione integração completa com a API de Pesquisa em Saúde brasileira (v3.0).
+
+## 1. Configuração — .env.local
+
+VITE_API_URL=https://req.joaosmfilho.org
+VITE_API_KEY=sk-pesquisa-saude-2026-master-key
+
+## 2. src/lib/pesquisaSaude.ts
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://req.joaosmfilho.org';
+const API_KEY  = import.meta.env.VITE_API_KEY  || 'sk-pesquisa-saude-2026-master-key';
+
+export type FonteSlug =
+  | 'pubmed' | 'scielo' | 'lilacs' | 'ministerio'
+  | 'sbmfc'  | 'sbp'   | 'sbpt'   | 'sbc';
+
+export interface ResultadoPesquisa {
+  id: string | null; titulo: string; resumo: string | null;
+  autores: string[] | null; ano: number | null;
+  fonte: string; tipo: string; url: string | null;
+  doi: string | null; pmid: string | null;
+  journal: string | null; volume: string | null;
+  issue: string | null; paginas: string | null;
+  citacao_abnt: string | null; referencia_abnt: string | null;
+}
+
+export interface PesquisaResponse {
+  resultados: ResultadoPesquisa[]; total: number; query: string;
+  fontes_consultadas: string[]; referencias_completas: string[];
+}
+
+export interface RespostaFormatada {
+  texto: string; citacoes_usadas: string[]; referencias: string[];
+}
+
+const hdrs = () => ({ 'X-API-Key': API_KEY, 'Content-Type': 'application/json' });
+
+export async function pesquisar(
+  query: string,
+  { fontes, anoMin = 2016, limit = 50, incluirCitacoes = true }:
+  { fontes?: FonteSlug[]; anoMin?: number; limit?: number; incluirCitacoes?: boolean } = {}
+): Promise<PesquisaResponse> {
+  const res = await fetch(`${API_URL}/pesquisar`, {
+    method: 'POST', headers: hdrs(),
+    body: JSON.stringify({ query, ano_min: anoMin, limit,
+      incluir_citacoes: incluirCitacoes, fontes: fontes ?? null }),
+  });
+  if (!res.ok) throw new Error(`Erro ${res.status}`);
+  return res.json();
+}
+
+export async function pesquisarPorFonte(
+  fonte: FonteSlug, query: string,
+  { anoMin = 2016, limit = 20 }: { anoMin?: number; limit?: number } = {}
+): Promise<PesquisaResponse> {
+  const p = new URLSearchParams({ q: query, ano_min: String(anoMin), limit: String(limit) });
+  const res = await fetch(`${API_URL}/pesquisar/${fonte}?${p}`, { headers: hdrs() });
+  if (!res.ok) throw new Error(`Erro ${res.status}`);
+  return res.json();
+}
+
+export async function obterRespostaFormatada(
+  query: string,
+  { anoMin = 2016, limit = 20 }: { anoMin?: number; limit?: number } = {}
+): Promise<RespostaFormatada> {
+  const res = await fetch(`${API_URL}/resposta`, {
+    method: 'POST', headers: hdrs(),
+    body: JSON.stringify({ query, ano_min: anoMin, limit }),
+  });
+  if (!res.ok) throw new Error(`Erro ${res.status}`);
+  return res.json();
+}
+
+export async function verificarStatus() {
+  const res = await fetch(`${API_URL}/status`, { headers: hdrs() });
+  if (!res.ok) throw new Error('Erro status');
+  return res.json();
+}
+
+## 3. src/components/PesquisaSaude.tsx
+
+import { useState } from 'react';
+import { pesquisar, type ResultadoPesquisa, type FonteSlug } from '@/lib/pesquisaSaude';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Search, ExternalLink, Copy, CheckCheck } from 'lucide-react';
+
+const FONTES: { slug: FonteSlug; label: string }[] = [
+  { slug: 'pubmed',     label: 'PubMed'          },
+  { slug: 'scielo',     label: 'SciELO'           },
+  { slug: 'lilacs',     label: 'LILACS/BVS'       },
+  { slug: 'ministerio', label: 'Min. Saúde (PCDT)' },
+  { slug: 'sbmfc',      label: 'SBMFC'            },
+  { slug: 'sbp',        label: 'SBP'              },
+  { slug: 'sbpt',       label: 'SBPT'             },
+  { slug: 'sbc',        label: 'SBC'              },
+];
+
+export function PesquisaSaude() {
+  const [termo, setTermo]           = useState('');
+  const [fontesSel, setFontesSel]   = useState<FonteSlug[]>([]);
+  const [resultados, setResultados] = useState<ResultadoPesquisa[]>([]);
+  const [referencias, setRefs]      = useState<string[]>([]);
+  const [fontesCons, setFontesCons] = useState<string[]>([]);
+  const [loading, setLoading]       = useState(false);
+  const [erro, setErro]             = useState<string | null>(null);
+  const [copiado, setCopiado]       = useState<string | null>(null);
+
+  const toggleFonte = (slug: FonteSlug) =>
+    setFontesSel(p => p.includes(slug) ? p.filter(f => f !== slug) : [...p, slug]);
+
+  const copiar = (txt: string, id: string) =>
+    navigator.clipboard.writeText(txt).then(() => {
+      setCopiado(id); setTimeout(() => setCopiado(null), 1800);
+    });
+
+  const handlePesquisar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!termo.trim()) return;
+    setLoading(true); setErro(null);
+    try {
+      const d = await pesquisar(termo, { fontes: fontesSel.length ? fontesSel : undefined, limit: 30 });
+      setResultados(d.resultados); setRefs(d.referencias_completas); setFontesCons(d.fontes_consultadas);
+    } catch (err: any) {
+      setErro(err.message ?? 'Erro ao pesquisar.');
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="w-full max-w-4xl mx-auto space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Search className="w-5 h-5"/>Pesquisa em Saúde</CardTitle>
+          <CardDescription>8 fontes brasileiras · dados reais · citações ABNT automáticas</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {FONTES.map(f => (
+              <button key={f.slug} type="button" onClick={() => toggleFonte(f.slug)}
+                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                  fontesSel.includes(f.slug)
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-background text-muted-foreground border-border hover:border-primary'}`}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <form onSubmit={handlePesquisar} className="flex gap-2">
+            <Input placeholder="Ex: diabetes, hipertensão gestante, DPOC..." value={termo}
+              onChange={e => setTermo(e.target.value)} className="flex-1"/>
+            <Button type="submit" disabled={loading}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Search className="w-4 h-4"/>}
+              Pesquisar
+            </Button>
+          </form>
+          {erro && <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm">{erro}</div>}
+          {fontesCons.length > 0 && (
+            <p className="text-xs text-muted-foreground">{resultados.length} resultado(s) · {fontesCons.join(', ')}</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {resultados.map((item, i) => (
+        <Card key={item.url ?? item.doi ?? i}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">
+              {item.url
+                ? <a href={item.url} target="_blank" rel="noopener noreferrer"
+                    className="hover:underline flex items-start gap-1">
+                    {item.titulo}<ExternalLink className="w-3 h-3 mt-1 shrink-0 opacity-60"/>
+                  </a>
+                : item.titulo}
+            </CardTitle>
+            <CardDescription className="flex flex-wrap gap-2 mt-1">
+              <Badge variant="secondary">{item.fonte}</Badge>
+              {item.ano && <span>{item.ano}</span>}
+              {item.doi && <span className="text-xs opacity-60">DOI: {item.doi}</span>}
+              {item.pmid && <span className="text-xs opacity-60">PMID: {item.pmid}</span>}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {item.autores && item.autores.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {item.autores.slice(0,4).join('; ')}{item.autores.length > 4 ? ' et al.' : ''}
+              </p>
+            )}
+            {item.resumo && <p className="text-sm text-muted-foreground line-clamp-3">{item.resumo}</p>}
+            {item.referencia_abnt && (
+              <div className="flex items-start gap-2 bg-muted/50 rounded p-2">
+                <code className="text-xs flex-1 break-words">{item.referencia_abnt}</code>
+                <button type="button" onClick={() => copiar(item.referencia_abnt!, `ref-${i}`)}
+                  className="shrink-0 text-muted-foreground hover:text-primary" title="Copiar referência ABNT">
+                  {copiado === `ref-${i}` ? <CheckCheck className="w-4 h-4 text-green-500"/> : <Copy className="w-4 h-4"/>}
+                </button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+
+      {!loading && resultados.length === 0 && termo && !erro && (
+        <p className="text-center text-muted-foreground py-8">
+          Nenhum resultado para "{termo}". Tente outro termo ou selecione mais fontes.
+        </p>
+      )}
+
+      {referencias.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="text-sm">Referências Bibliográficas (ABNT)</CardTitle></CardHeader>
+          <CardContent>
+            <ol className="space-y-2">
+              {referencias.map((ref, i) => (
+                <li key={i} className="text-xs text-muted-foreground flex gap-2">
+                  <span className="shrink-0 font-semibold">{i+1}.</span><span>{ref}</span>
+                </li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+## 4. src/pages/Index.tsx
+
+import { PesquisaSaude } from '@/components/PesquisaSaude';
+
+export default function Index() {
+  return (
+    <div className="container py-8">
+      <h1 className="text-2xl font-bold mb-6">Pesquisa em Saúde</h1>
+      <PesquisaSaude />
+    </div>
+  );
+}
+
+## Endpoints
+
+Base URL: https://req.joaosmfilho.org  |  Auth: header X-API-Key
+
+POST /pesquisar          → busca avançada (body JSON com query, fontes, ano_min, limit)
+GET  /pesquisar?q=termo  → busca simples via query string
+GET  /pesquisar/{fonte}  → busca em fonte específica (pubmed|scielo|lilacs|ministerio|sbmfc|sbp|sbpt|sbc)
+POST /resposta           → texto formatado com citações ABNT embutidas
+GET  /fontes             → lista as 8 fontes disponíveis
+GET  /status             → status operacional de cada fonte
+GET  /playground         → interface visual para testar sem código
+GET  /docs               → Swagger UI
 ```
     """,
     version="3.0.0",
