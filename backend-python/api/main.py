@@ -3,6 +3,7 @@ API de Pesquisa em Saúde - Python/FastAPI
 Pesquisa unificada em fontes brasileiras de saúde com citações ABNT
 """
 from fastapi import FastAPI, HTTPException, Query, Security, Depends, Path
+from fastapi.responses import HTMLResponse
 from fastapi.security import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -208,6 +209,7 @@ async def root():
             "resposta_abnt": "/resposta",
             "fontes": "/fontes",
             "status": "/status",
+            "playground": "/playground",
             "documentacao": "/docs",
         },
         "autenticacao": "Header X-API-Key obrigatório",
@@ -225,6 +227,502 @@ async def get_info_api_key():
             "javascript": 'fetch(url, {headers: {"X-API-Key": "sk-sua-key"}})',
         },
     }
+
+# ─── HTML do Playground ─────────────────────────────────────────────────────
+
+_PLAYGROUND_HTML = """<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Playground – API Pesquisa Saúde</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #273549;
+    --border: #334155;
+    --accent: #38bdf8;
+    --accent-dark: #0ea5e9;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --radius: 10px;
+    --shadow: 0 4px 24px rgba(0,0,0,.4);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { color: var(--text-muted); font-size: .9rem; margin-bottom: 24px; }
+  .badge {
+    display: inline-block; font-size: .7rem; font-weight: 600;
+    padding: 2px 8px; border-radius: 999px; margin-left: 8px;
+    background: var(--accent); color: #0f172a; vertical-align: middle;
+  }
+  /* Layout */
+  .layout { display: grid; grid-template-columns: 340px 1fr; gap: 20px; max-width: 1200px; margin: 0 auto; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  /* Panel */
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+  }
+  .panel-title { font-size: .8rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--text-muted); margin-bottom: 16px; }
+  /* Form */
+  .field { margin-bottom: 14px; }
+  label { display: block; font-size: .8rem; color: var(--text-muted);
+    margin-bottom: 4px; font-weight: 600; }
+  input[type=text], input[type=number], input[type=password] {
+    width: 100%; padding: 9px 12px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--bg);
+    color: var(--text); font-size: .9rem; outline: none;
+    transition: border-color .15s;
+  }
+  input:focus { border-color: var(--accent); }
+  /* Fontes checkboxes */
+  .sources-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .source-check { display: flex; align-items: center; gap: 6px; font-size: .82rem;
+    padding: 5px 8px; border-radius: 5px; border: 1px solid var(--border);
+    background: var(--bg); cursor: pointer; user-select: none; transition: border-color .15s; }
+  .source-check:hover { border-color: var(--accent); }
+  .source-check input { width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer; }
+  .type-badge { font-size: .65rem; padding: 1px 5px; border-radius: 999px;
+    font-weight: 700; margin-left: auto; }
+  .type-governo  { background: #166534; color: #bbf7d0; }
+  .type-sociedade { background: #1d4ed8; color: #bfdbfe; }
+  .type-base_dados { background: #6d28d9; color: #ddd6fe; }
+  /* Inline row */
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  /* Button */
+  .btn {
+    width: 100%; padding: 11px; border-radius: 7px; border: none;
+    font-size: .95rem; font-weight: 700; cursor: pointer;
+    background: var(--accent-dark); color: #fff;
+    transition: background .15s, transform .1s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn:hover { background: var(--accent); }
+  .btn:active { transform: scale(.98); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  /* Status bar */
+  #status-bar {
+    font-size: .82rem; padding: 8px 12px; border-radius: 6px;
+    margin-top: 12px; display: none;
+    align-items: center; gap: 8px;
+  }
+  #status-bar.loading { display: flex; background: #1c3b5a; color: var(--accent); }
+  #status-bar.error   { display: flex; background: #3b1c1c; color: var(--red); }
+  #status-bar.success { display: flex; background: #1c3b26; color: var(--green); }
+  .spinner { width: 16px; height: 16px; border: 2px solid currentColor;
+    border-top-color: transparent; border-radius: 50%; animation: spin .6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  /* Results panel header */
+  .results-header { display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; }
+  #results-count { font-size: .82rem; color: var(--text-muted); }
+  #results-time  { font-size: .75rem; color: var(--text-muted); }
+  /* Cards */
+  #results-list { display: flex; flex-direction: column; gap: 14px; }
+  .card {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 18px;
+    animation: fadeIn .2s ease-out;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+  .card-header { display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start; }
+  .card-index { font-size: .75rem; color: var(--text-muted); min-width: 22px; margin-top: 2px; }
+  .card-title { font-size: .95rem; font-weight: 600; line-height: 1.35; }
+  .card-title a:hover { color: var(--accent); }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .meta-chip {
+    font-size: .72rem; padding: 2px 8px; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--text-muted);
+  }
+  .meta-chip.fonte  { border-color: var(--accent); color: var(--accent); }
+  .meta-chip.doi    { border-color: var(--yellow); color: var(--yellow); }
+  .meta-chip.pubmed { border-color: var(--green); color: var(--green); }
+  .abstract {
+    font-size: .82rem; color: var(--text-muted); line-height: 1.55;
+    max-height: 96px; overflow: hidden; position: relative;
+    cursor: pointer; transition: max-height .3s;
+  }
+  .abstract.expanded { max-height: none; }
+  .abstract::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+    height: 32px;
+    background: linear-gradient(transparent, var(--surface2));
+    pointer-events: none;
+  }
+  .abstract.expanded::after { display: none; }
+  .abnt {
+    margin-top: 10px; font-size: .75rem; color: var(--text-muted);
+    background: var(--bg); border-left: 3px solid var(--border);
+    padding: 6px 10px; border-radius: 0 5px 5px 0;
+    cursor: pointer; position: relative;
+  }
+  .abnt:hover { border-left-color: var(--accent); }
+  .copy-tip {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    font-size: .68rem; color: var(--text-muted); opacity: 0; transition: opacity .15s;
+  }
+  .abnt:hover .copy-tip { opacity: 1; }
+  /* Placeholder */
+  #placeholder {
+    text-align: center; padding: 60px 20px; color: var(--text-muted);
+  }
+  #placeholder svg { margin-bottom: 16px; opacity: .3; }
+  /* References section */
+  #refs-section { margin-top: 20px; display: none; }
+  #refs-section summary {
+    cursor: pointer; font-size: .8rem; font-weight: 700;
+    color: var(--text-muted); padding: 10px 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); user-select: none;
+  }
+  #refs-list {
+    background: var(--surface); border: 1px solid var(--border);
+    border-top: none; border-radius: 0 0 var(--radius) var(--radius);
+    padding: 14px; font-size: .78rem; color: var(--text-muted);
+    line-height: 1.7; max-height: 300px; overflow-y: auto;
+  }
+  #refs-list p { margin-bottom: 8px; }
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; padding: 8px 16px;
+    background: var(--accent-dark); color: #fff; border-radius: 7px;
+    font-size: .82rem; font-weight: 600; opacity: 0;
+    transition: opacity .2s; pointer-events: none; z-index: 999;
+  }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div style="max-width:1200px;margin:0 auto 20px;">
+  <h1>🔬 API Pesquisa Saúde <span class="badge">v3.0</span></h1>
+  <p class="subtitle">
+    Playground interativo — teste em tempo real as buscas em fontes brasileiras de saúde.
+    Resultados reais · Links verificados · Abstracts completos · Citações ABNT
+    &nbsp;·&nbsp; <a href="/docs" target="_blank">Swagger UI</a>
+  </p>
+</div>
+
+<div class="layout">
+  <!-- Painel de Controle -->
+  <aside class="panel">
+    <p class="panel-title">⚙️ Parâmetros da Busca</p>
+
+    <div class="field">
+      <label for="api-key">🔑 API Key</label>
+      <input type="password" id="api-key" value="sk-pesquisa-saude-2026-master-key"
+        placeholder="sk-pesquisa-saude-..." autocomplete="off" />
+    </div>
+
+    <div class="field">
+      <label for="query">🔍 Termo de busca</label>
+      <input type="text" id="query" placeholder="ex: diabetes, hipertensão, DPOC…"
+        value="" autocomplete="off" />
+    </div>
+
+    <div class="field">
+      <label>📚 Fontes</label>
+      <div class="sources-grid" id="sources-grid"></div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button onclick="toggleAll(true)"  style="flex:1;font-size:.75rem;padding:4px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text-muted);cursor:pointer;">Todas</button>
+        <button onclick="toggleAll(false)" style="flex:1;font-size:.75rem;padding:4px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text-muted);cursor:pointer;">Nenhuma</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label for="ano-min">📅 Ano mínimo</label>
+        <input type="number" id="ano-min" value="2016" min="1990" max="2026" />
+      </div>
+      <div class="field">
+        <label for="limit">📊 Limite</label>
+        <input type="number" id="limit" value="20" min="1" max="100" />
+      </div>
+    </div>
+
+    <button class="btn" id="search-btn" onclick="buscar()">
+      <span>🚀</span><span>Pesquisar</span>
+    </button>
+
+    <div id="status-bar">
+      <div class="spinner" id="spinner" style="display:none;"></div>
+      <span id="status-text"></span>
+    </div>
+
+    <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:14px;">
+      <p class="panel-title">ℹ️ Exemplos rápidos</p>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <button class="quick-btn" onclick="setQuery('diabetes tipo 2')">diabetes tipo 2</button>
+        <button class="quick-btn" onclick="setQuery('hipertensão arterial gestação')">hipertensão arterial gestação</button>
+        <button class="quick-btn" onclick="setQuery('DPOC tratamento')">DPOC tratamento</button>
+        <button class="quick-btn" onclick="setQuery('amamentação aleitamento')">amamentação aleitamento</button>
+        <button class="quick-btn" onclick="setQuery('depressão antidepressivo')">depressão antidepressivo</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Painel de Resultados -->
+  <section class="panel" style="overflow:hidden;">
+    <div class="results-header">
+      <p class="panel-title" style="margin-bottom:0;">📄 Resultados</p>
+      <div>
+        <span id="results-count"></span>
+        <span id="results-time" style="margin-left:12px;"></span>
+      </div>
+    </div>
+
+    <div id="results-list">
+      <div id="placeholder">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <p style="font-size:1rem;font-weight:600;margin-bottom:6px;">Pronto para pesquisar</p>
+        <p style="font-size:.85rem;">Digite um termo e clique em Pesquisar</p>
+      </div>
+    </div>
+
+    <details id="refs-section">
+      <summary id="refs-summary">📋 Referências Completas (ABNT)</summary>
+      <div id="refs-list"></div>
+    </details>
+  </section>
+</div>
+
+<div id="toast"></div>
+
+<style>
+  .quick-btn {
+    text-align:left; padding:6px 10px; border-radius:6px; border:1px solid var(--border);
+    background:var(--bg); color:var(--text-muted); cursor:pointer; font-size:.78rem;
+    transition:border-color .15s,color .15s;
+  }
+  .quick-btn:hover { border-color:var(--accent); color:var(--text); }
+</style>
+
+<script>
+  const FONTES = [
+    { slug: "pubmed",    label: "PubMed",          tipo: "base_dados" },
+    { slug: "scielo",    label: "SciELO",           tipo: "base_dados" },
+    { slug: "lilacs",    label: "LILACS/BVS",       tipo: "base_dados" },
+    { slug: "ministerio",label: "Ministério Saúde", tipo: "governo"    },
+    { slug: "sbmfc",     label: "SBMFC",            tipo: "sociedade"  },
+    { slug: "sbp",       label: "SBP",              tipo: "sociedade"  },
+    { slug: "sbpt",      label: "SBPT",             tipo: "sociedade"  },
+    { slug: "sbc",       label: "SBC",              tipo: "sociedade"  },
+  ];
+
+  const TYPE_BADGE = {
+    governo:    ["type-governo",    "GOV"],
+    sociedade:  ["type-sociedade",  "SOC"],
+    base_dados: ["type-base_dados", "DB"],
+  };
+
+  // Build checkboxes
+  const grid = document.getElementById("sources-grid");
+  FONTES.forEach(f => {
+    const lbl = document.createElement("label");
+    lbl.className = "source-check";
+    lbl.title = f.slug;
+    const [cls, txt] = TYPE_BADGE[f.tipo] || ["", ""];
+    lbl.innerHTML = `<input type="checkbox" value="${f.slug}" checked />${f.label}<span class="type-badge ${cls}">${txt}</span>`;
+    grid.appendChild(lbl);
+  });
+
+  function toggleAll(on) {
+    document.querySelectorAll("#sources-grid input[type=checkbox]").forEach(c => c.checked = on);
+  }
+
+  function setQuery(q) {
+    document.getElementById("query").value = q;
+    buscar();
+  }
+
+  function showStatus(type, msg) {
+    const bar = document.getElementById("status-bar");
+    bar.className = type;
+    document.getElementById("status-text").textContent = msg;
+    document.getElementById("spinner").style.display = type === "loading" ? "block" : "none";
+  }
+
+  function toast(msg) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    setTimeout(() => el.classList.remove("show"), 1800);
+  }
+
+  function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => toast("Copiado!")).catch(() => {});
+  }
+
+  function toggleAbstract(el) {
+    el.classList.toggle("expanded");
+  }
+
+  async function buscar() {
+    const q       = document.getElementById("query").value.trim();
+    const apiKey  = document.getElementById("api-key").value.trim();
+    const anoMin  = parseInt(document.getElementById("ano-min").value) || 2016;
+    const limit   = parseInt(document.getElementById("limit").value)   || 20;
+    const checked = [...document.querySelectorAll("#sources-grid input:checked")].map(c => c.value);
+
+    if (!q) { showStatus("error", "Digite um termo de busca!"); return; }
+    if (!apiKey) { showStatus("error", "API Key obrigatória!"); return; }
+    if (checked.length === 0) { showStatus("error", "Selecione ao menos uma fonte!"); return; }
+
+    const btn = document.getElementById("search-btn");
+    btn.disabled = true;
+    showStatus("loading", "Buscando em " + checked.length + " fonte(s)…");
+    document.getElementById("results-list").innerHTML = "";
+    document.getElementById("results-count").textContent = "";
+    document.getElementById("results-time").textContent = "";
+    document.getElementById("refs-section").style.display = "none";
+
+    const t0 = Date.now();
+
+    try {
+      const body = { query: q, ano_min: anoMin, limit, incluir_citacoes: true, fontes: checked };
+      const resp = await fetch("/pesquisar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
+        body: JSON.stringify(body),
+      });
+
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(2);
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ detail: "Erro desconhecido" }));
+        showStatus("error", "Erro " + resp.status + ": " + (err.detail || resp.statusText));
+        return;
+      }
+
+      const data = await resp.json();
+      const { resultados, total, fontes_consultadas, referencias_completas } = data;
+
+      document.getElementById("results-count").textContent =
+        total + " resultado" + (total !== 1 ? "s" : "") +
+        (fontes_consultadas.length ? " · " + fontes_consultadas.join(", ") : "");
+      document.getElementById("results-time").textContent = elapsed + "s";
+
+      if (total === 0) {
+        showStatus("error", "Nenhum resultado encontrado. Tente outro termo ou mais fontes.");
+        document.getElementById("results-list").innerHTML =
+          '<div id="placeholder"><p style="font-size:.9rem;color:var(--text-muted)">Nenhum resultado. Tente ampliar o período, mudar o termo ou selecionar mais fontes.</p></div>';
+        return;
+      }
+
+      showStatus("success", "✓ " + total + " resultado(s) encontrado(s) em " + elapsed + "s");
+
+      const list = document.getElementById("results-list");
+      resultados.forEach((art, i) => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const titleHtml = art.url
+          ? `<a href="${esc(art.url)}" target="_blank" rel="noopener">${esc(art.titulo)}</a>`
+          : esc(art.titulo);
+
+        const authorsHtml = art.autores && art.autores.length
+          ? art.autores.slice(0, 3).map(a => esc(a)).join("; ") + (art.autores.length > 3 ? " et al." : "")
+          : "";
+
+        const chips = [];
+        if (art.fonte)   chips.push(`<span class="meta-chip fonte">${esc(art.fonte)}</span>`);
+        if (art.ano)     chips.push(`<span class="meta-chip">${art.ano}</span>`);
+        if (art.tipo)    chips.push(`<span class="meta-chip">${esc(art.tipo)}</span>`);
+        if (art.doi)     chips.push(`<span class="meta-chip doi" title="DOI: ${esc(art.doi)}">DOI</span>`);
+        if (art.pmid)    chips.push(`<span class="meta-chip pubmed">PMID ${esc(art.pmid)}</span>`);
+        if (art.journal) chips.push(`<span class="meta-chip" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(art.journal)}">${esc(art.journal)}</span>`);
+
+        const abstractHtml = art.resumo
+          ? `<div class="abstract" onclick="toggleAbstract(this)" title="Clique para expandir">${esc(art.resumo)}</div>`
+          : "";
+
+        const abntHtml = art.referencia_abnt
+          ? `<div class="abnt" onclick="copyText(${JSON.stringify(art.referencia_abnt)})" title="Clique para copiar">
+               <span style="font-weight:600;color:var(--yellow);">${esc(art.citacao_abnt || "")}</span>
+               &nbsp;${esc(art.referencia_abnt)}
+               <span class="copy-tip">📋 copiar</span>
+             </div>`
+          : "";
+
+        card.innerHTML = `
+          <div class="card-header">
+            <span class="card-index">${i + 1}.</span>
+            <span class="card-title">${titleHtml}</span>
+          </div>
+          ${authorsHtml ? `<div style="font-size:.78rem;color:var(--text-muted);margin-bottom:6px;">${authorsHtml}</div>` : ""}
+          <div class="meta">${chips.join("")}</div>
+          ${abstractHtml}
+          ${abntHtml}
+        `;
+        list.appendChild(card);
+      });
+
+      // References section
+      if (referencias_completas && referencias_completas.length > 0) {
+        const sec = document.getElementById("refs-section");
+        const refList = document.getElementById("refs-list");
+        document.getElementById("refs-summary").textContent =
+          `📋 Referências Completas ABNT (${referencias_completas.length})`;
+        refList.innerHTML = referencias_completas
+          .map((r, i) => `<p><strong>${i+1}.</strong> ${esc(r)}</p>`)
+          .join("");
+        sec.style.display = "block";
+      }
+
+    } catch (e) {
+      showStatus("error", "Erro de rede: " + e.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function esc(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  // Search on Enter key in query input
+  document.getElementById("query").addEventListener("keydown", e => {
+    if (e.key === "Enter") buscar();
+  });
+</script>
+</body>
+</html>"""
+
+
+@app.get("/playground", response_class=HTMLResponse, tags=["Playground"], include_in_schema=True)
+async def playground():
+    """
+    **Playground interativo** para testar a API em tempo real diretamente no browser.
+
+    - Formulário com todos os parâmetros (query, fontes, ano mínimo, limite, API Key)
+    - Resultados reais: título clicável, autores, DOI, abstract, citação ABNT
+    - Copia referências ABNT com um clique
+    - Sem necessidade de curl ou código
+
+    Abra em: `/playground`
+    """
+    return HTMLResponse(content=_PLAYGROUND_HTML)
 
 # === Endpoints com Autenticação ===
 
