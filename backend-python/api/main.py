@@ -40,6 +40,7 @@ from scrapers.redalyc import RedalycScraper
 from scrapers.bdtd import BDTDScraper
 from scrapers.capes import CapesScraper
 from scrapers.semanticscholar import SemanticScholarScraper
+from scrapers.openalex import OpenAlexScraper
 from scrapers.cache import cache_medio, cache_curto
 from abnt.formatador import ABNTFormatador, Artigo, formatador
 
@@ -140,6 +141,7 @@ FONTES_CONFIG = [
     {"slug": "bdtd", "nome": "BDTD (Teses e Dissertações)", "tipo": "base_dados", "prioridade": 2},
     {"slug": "capes", "nome": "Portal CAPES (CrossRef)", "tipo": "base_dados", "prioridade": 1},
     {"slug": "semanticscholar", "nome": "Semantic Scholar (Allen AI)", "tipo": "base_dados", "prioridade": 1},
+    {"slug": "openalex", "nome": "OpenAlex (OurResearch)", "tipo": "base_dados", "prioridade": 1},
 ]
 
 # === Lifespan ===
@@ -160,6 +162,7 @@ async def lifespan(app: FastAPI):
         "bdtd": BDTDScraper(),
         "capes": CapesScraper(),
         "semanticscholar": SemanticScholarScraper(),
+        "openalex": OpenAlexScraper(),
     }
     yield
 
@@ -173,13 +176,14 @@ app = FastAPI(
 Esta API realiza pesquisas **reais** em múltiplas fontes de saúde,
 retornando artigos verídicos com links funcionais, DOIs reais e abstracts completos.
 
-### Fontes de Dados (13 fontes — todas gratuitas)
+### Fontes de Dados (14 fontes — todas gratuitas)
 
 **Bases de Dados Internacionais**
 - **PubMed** – NCBI E-utilities API oficial · abstract completo · DOI real · PMID
 - **Cochrane Library** – EuropePMC API · revisões sistemáticas e meta-análises
 - **SciELO** – search.scielo.org · artigos científicos em português/inglês
-- **Semantic Scholar** – Allen AI Graph API gratuita · +200 M papers · contagem de citações · `S2_API_KEY` opcional
+- **Semantic Scholar** – Allen AI Graph API · +200 M papers · citationCount · `S2_API_KEY` opcional e gratuita
+- **OpenAlex** – OurResearch · +250 M papers · totalmente aberto · sem autenticação
 
 **Bases de Dados Nacionais / Latino-Americanas**
 - **LILACS/BVS** – pesquisa.bvsalud.org · literatura latino-americana (BIREME)
@@ -230,7 +234,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://req.joaosmfilho.org';
 const API_KEY  = import.meta.env.VITE_API_KEY  || 'sk-pesquisa-saude-2026-master-key';
 
 export type FonteSlug =
-  | 'pubmed' | 'cochrane' | 'scielo' | 'lilacs' | 'capes' | 'semanticscholar'
+  | 'pubmed' | 'cochrane' | 'scielo' | 'lilacs' | 'capes' | 'semanticscholar' | 'openalex'
   | 'redalyc' | 'bdtd'
   | 'ministerio' | 'sbmfc' | 'sbp' | 'sbpt' | 'sbc';
 
@@ -312,11 +316,10 @@ const FONTES: { slug: FonteSlug; label: string }[] = [
   { slug: 'cochrane',   label: 'Cochrane'           },
   { slug: 'scielo',     label: 'SciELO'             },
   { slug: 'lilacs',     label: 'LILACS/BVS'         },
-  { slug: 'capes',      label: 'Portal CAPES'       },
-  { slug: 'scopus',          label: 'Scopus'             },
+  { slug: 'capes',          label: 'Portal CAPES'       },
   { slug: 'semanticscholar', label: 'Semantic Scholar'   },
-  { slug: 'googlescholar',   label: 'Google Scholar'     },
-  { slug: 'redalyc',   label: 'Redalyc'            },
+  { slug: 'openalex',       label: 'OpenAlex'           },
+  { slug: 'redalyc',        label: 'Redalyc'            },
   { slug: 'bdtd',       label: 'BDTD (Teses)'       },
   { slug: 'ministerio', label: 'Min. Saúde (PCDT)'  },
   { slug: 'sbmfc',      label: 'SBMFC'              },
@@ -710,7 +713,7 @@ _PLAYGROUND_HTML = """<!DOCTYPE html>
 <div style="max-width:1200px;margin:0 auto 20px;">
   <h1>🔬 API Pesquisa Saúde <span class="badge">v3.0</span></h1>
   <p class="subtitle">
-    Playground interativo — teste em tempo real as buscas em 13 fontes de saúde (nacionais e internacionais).
+    Playground interativo — teste em tempo real as buscas em 14 fontes de saúde (nacionais e internacionais).
     Resultados reais · Links verificados · Abstracts completos · Citações ABNT
     &nbsp;·&nbsp; <a href="/docs" target="_blank">Swagger UI</a>
   </p>
@@ -818,11 +821,10 @@ _PLAYGROUND_HTML = """<!DOCTYPE html>
     { slug: "cochrane",  label: "Cochrane",            tipo: "base_dados" },
     { slug: "scielo",    label: "SciELO",              tipo: "base_dados" },
     { slug: "lilacs",    label: "LILACS/BVS",          tipo: "base_dados" },
-    { slug: "capes",     label: "Portal CAPES",        tipo: "base_dados" },
-    { slug: "scopus",           label: "Scopus",              tipo: "base_dados" },
-    { slug: "semanticscholar",  label: "Semantic Scholar",    tipo: "base_dados" },
-    { slug: "googlescholar",    label: "Google Scholar",      tipo: "base_dados" },
-    { slug: "redalyc",   label: "Redalyc",             tipo: "base_dados" },
+    { slug: "capes",           label: "Portal CAPES",        tipo: "base_dados" },
+    { slug: "semanticscholar", label: "Semantic Scholar",    tipo: "base_dados" },
+    { slug: "openalex",        label: "OpenAlex",            tipo: "base_dados" },
+    { slug: "redalyc",         label: "Redalyc",             tipo: "base_dados" },
     { slug: "bdtd",      label: "BDTD (Teses)",        tipo: "base_dados" },
     { slug: "ministerio",label: "Ministério Saúde",    tipo: "governo"    },
     { slug: "sbmfc",     label: "SBMFC",               tipo: "sociedade"  },
@@ -1089,7 +1091,7 @@ async def pesquisar_get(
     - Citações ABNT automáticas
 
     **Fontes disponíveis:** ministerio, sbmfc, sbp, sbpt, sbc, scielo, lilacs, pubmed,
-    cochrane, redalyc, bdtd, capes, scopus
+    cochrane, redalyc, bdtd, capes, semanticscholar, openalex
 
     **Exemplo:**
     ```bash
@@ -1114,7 +1116,7 @@ async def pesquisar_post(
 
 @app.get("/pesquisar/{fonte}", response_model=PesquisaResponse, tags=["Pesquisa"])
 async def pesquisar_por_fonte(
-    fonte: str = Path(..., description="Slug da fonte: ministerio, sbmfc, sbp, sbpt, sbc, scielo, lilacs, pubmed, cochrane, redalyc, bdtd, capes, scopus"),
+    fonte: str = Path(..., description="Slug da fonte: ministerio, sbmfc, sbp, sbpt, sbc, scielo, lilacs, pubmed, cochrane, redalyc, bdtd, capes, semanticscholar, openalex"),
     q: str = Query(..., description="Termo de busca", min_length=2),
     ano_min: int = Query(default=2016, description="Ano mínimo de publicação"),
     limit: int = Query(default=20, ge=1, le=100, description="Máximo de resultados"),

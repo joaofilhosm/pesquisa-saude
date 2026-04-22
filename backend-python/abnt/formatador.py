@@ -73,9 +73,8 @@ class ABNTFormatador:
         "redalyc": "REDALYC",
         "bdtd": "BDTD",
         "capes": "CAPES",
-        "scopus": "SCOPUS",
         "semantic scholar": "SEMANTIC SCHOLAR",
-        "google scholar": "GOOGLE SCHOLAR",
+        "openalex": "OPENALEX",
         "hc-fmusp": "HC-FMUSP",
         "hospital das clínicas": "HC-FMUSP",
         "sírio-libanês": "HOSPITAL SÍRIO-LIBANÊS",
@@ -250,8 +249,8 @@ class ABNTFormatador:
         # Periódico: preferir journal real; cair em fonte se não for nome de base
         fontes_genericas = {
             'SciELO', 'PubMed', 'LILACS', 'BVS',
-            'Cochrane', 'Redalyc', 'BDTD', 'CAPES', 'Scopus',
-            'Semantic Scholar', 'Google Scholar',
+            'Cochrane', 'Redalyc', 'BDTD', 'CAPES',
+            'Semantic Scholar', 'OpenAlex',
         }
         periodico = artigo.journal or (
             artigo.fonte if artigo.fonte not in fontes_genericas else ""
