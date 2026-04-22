@@ -23,6 +23,16 @@ echo "=== API de Pesquisa em Saúde ==="
 echo "Port: $USE_PORT"
 echo "PYTHONPATH: $PYTHONPATH"
 
+# Matar processo existente na porta (se houver)
+echo "Checking for existing process on port $USE_PORT..."
+EXISTING_PID=$(lsof -t -i:$USE_PORT 2>/dev/null || netstat -tlnp 2>/dev/null | grep ":$USE_PORT " | awk '{print $7}' | cut -d'/' -f1 || ss -tlnp 2>/dev/null | grep ":$USE_PORT " | awk '{print $7}' | cut -d'/' -f1)
+if [ -n "$EXISTING_PID" ]; then
+    echo "Killing existing process (PID: $EXISTING_PID) on port $USE_PORT..."
+    kill -9 $EXISTING_PID 2>/dev/null || true
+    sleep 1
+    echo "Port $USE_PORT freed."
+fi
+
 # Iniciar uvicorn
 python -m uvicorn api.main:app \
     --host 0.0.0.0 \
