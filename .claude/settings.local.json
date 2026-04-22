@@ -45,7 +45,8 @@
       "Bash(echo \"PID: $!\")",
       "Bash(echo \"Started with PID: $!\" sleep 8 echo \"=== Server Log ===\" cat server.log echo \"=== Process Check ===\" ps aux)",
       "Bash(/data/repos/joaofilhosm__pesquisa-saude/.venv/bin/pip list *)",
-      "Bash(/data/repos/joaofilhosm__pesquisa-saude/.venv/bin/pip install *)"
+      "Bash(/data/repos/joaofilhosm__pesquisa-saude/.venv/bin/pip install *)",
+      "Bash(pkill -f \"uvicorn.*8001\" sleep 2 cat /tmp/startup.log)"
     ]
   }
 }

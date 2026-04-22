@@ -15,11 +15,24 @@ cd "${SCRIPT_DIR}"
 # Re-exportar PYTHONPATH após ativar venv
 export PYTHONPATH="${SCRIPT_DIR}/backend-python"
 
-# Porta: recebe do repo-panel, usa 8001 se nao definida
+# Porta: recebe do repo-panel via argumento -l ou variavel PORT, usa 8001 se nao definida
 # Nunca usar 3000 ou 8089
-if [ -n "$PORT" ] && [ "$PORT" != "3000" ] && [ "$PORT" != "8089" ]; then
+USE_PORT=""
+
+# Tentar argumento -l primeiro
+while getopts "l:" opt; do
+    case $opt in
+        l) USE_PORT="$OPTARG" ;;
+    esac
+done
+
+# Se nao passou -l, tentar variavel PORT
+if [ -z "$USE_PORT" ] && [ -n "$PORT" ] && [ "$PORT" != "3000" ] && [ "$PORT" != "8089" ]; then
     USE_PORT=$PORT
-else
+fi
+
+# Default para 8001
+if [ -z "$USE_PORT" ]; then
     USE_PORT=8001
 fi
 
