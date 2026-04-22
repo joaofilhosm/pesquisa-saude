@@ -53,7 +53,7 @@ curl https://req.joaosmfilho.org/
   "nome": "API de Pesquisa em Saúde",
   "versao": "3.0.0",
   "descricao": "Pesquisa real em fontes brasileiras de saúde (zero dados fictícios)",
-  "fontes": ["Ministério da Saúde (PCDT/BVS)", "SBMFC", "SBP", "SBPT", "SBC", "SciELO", "LILACS/BVS", "PubMed (E-utilities)"],
+  "fontes": ["Ministério da Saúde (PCDT/BVS)", "SBMFC", "SBP", "SBPT", "SBC", "SciELO", "LILACS/BVS", "PubMed (E-utilities)", "Cochrane", "Semantic Scholar", "OpenAlex", "Google Scholar (SerpAPI)", "Google Scholar (SearchApi.io)", "Google Scholar (ScholarAPI.net)", "Google Scholar (Serply.io)", "Redalyc", "BDTD", "Portal CAPES"],
   "endpoints": {
     "pesquisa": "/pesquisar?q={termo}",
     "por_fonte": "/pesquisar/{fonte}?q={termo}",
@@ -202,7 +202,7 @@ curl -H "X-API-Key: sk-key" \
 
 Pesquisa em uma única fonte de dados. Mais rápido e direcionado.
 
-**Fontes disponíveis:** `ministerio` · `sbmfc` · `sbp` · `sbpt` · `sbc` · `scielo` · `lilacs` · `pubmed`
+**Fontes disponíveis:** `ministerio` · `sbmfc` · `sbp` · `sbpt` · `sbc` · `scielo` · `lilacs` · `pubmed` · `cochrane` · `semanticscholar` · `openalex` · `googlescholar` · `serpapi` · `searchapi` · `scholarapi` · `serply` · `redalyc` · `bdtd` · `capes`
 
 **Requer autenticação.**
 
@@ -413,6 +413,10 @@ const pubmed = await fetch(
 |----------|-------------|-----------|
 | `API_KEYS` | Sim | API Keys válidas, separadas por vírgula |
 | `NCBI_API_KEY` | Não | API Key do NCBI para PubMed (aumenta rate limit) |
+| `SERPAPI_KEY` | Não | API Key para Google Scholar via SerpAPI (https://serpapi.com/manage-api-key) |
+| `SEARCHAPI_KEY` | Não | API Key para Google Scholar via SearchApi.io (https://www.searchapi.io/api-key) |
+| `SCHOLARAPI_KEY` | Não | API Key para Google Scholar via ScholarAPI.net (https://scholarapi.net) |
+| `SERPLY_API_KEY` | Não | API Key para Google Scholar via Serply.io (https://serply.io) |
 | `SUPABASE_URL` | Não | URL do projeto Supabase |
 | `SUPABASE_KEY` | Não | Service role key do Supabase |
 | `PORT` | Não | Porta do servidor (padrão: 8001) |
@@ -424,7 +428,7 @@ const pubmed = await fetch(
 | Código | Causa | Solução |
 |--------|-------|---------|
 | 401 | API Key ausente ou inválida | Adicione `X-API-Key` no header |
-| 400 | Fonte inválida em `/pesquisar/{fonte}` | Use: ministerio, sbmfc, sbp, sbpt, sbc, scielo, lilacs, pubmed |
+| 400 | Fonte inválida em `/pesquisar/{fonte}` | Use: ministerio, sbmfc, sbp, sbpt, sbc, scielo, lilacs, pubmed, cochrane, semanticscholar, openalex, googlescholar, serpapi, searchapi, scholarapi, serply, redalyc, bdtd, capes |
 | 422 | Parâmetro inválido | Verifique `q` (mínimo 2 chars), `limit` (1-200) |
 | 500 | Erro interno | Verifique os logs do servidor |
 

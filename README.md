@@ -17,11 +17,13 @@ Esta API realiza pesquisas **reais** em **fontes brasileiras de saúde** e retor
 
 **Zero dados fictícios**: se uma fonte não retornar resultados, a lista fica vazia — nunca dados fabricados.
 
-### Fontes Consultadas
+### Fontes Consultadas (19 fontes)
 
-- 🏛️ **Ministério da Saúde** – PCDTs e BVS (gov.br)
+- 🏛️ **Governo** – Ministério da Saúde (PCDT/BVS)
 - 🩺 **Sociedades Médicas** – SBMFC, SBP, SBPT, SBC
-- 📚 **Bases Científicas** – SciELO, LILACS/BVS, PubMed (E-utilities)
+- 📚 **Bases Nacionais/Latino-Americanas** – SciELO, LILACS/BVS, Redalyc, BDTD, Portal CAPES
+- 🌍 **Bases Internacionais** – PubMed (E-utilities), Cochrane (EuropePMC), Semantic Scholar, OpenAlex
+- 🔍 **Google Scholar** – via proxy SOCKS5 ou APIs pagas (SerpAPI, SearchApi.io, ScholarAPI.net, Serply.io)
 
 ## ⚡ Quick Start
 
@@ -97,7 +99,11 @@ curl -H "X-API-Key: sk-pesquisa-saude-2026-master-key" \
 
 ### Fontes disponíveis para `/pesquisar/{fonte}`
 
-`ministerio` · `sbmfc` · `sbp` · `sbpt` · `sbc` · `scielo` · `lilacs` · `pubmed`
+**Bases de Dados:** `pubmed` · `cochrane` · `scielo` · `lilacs` · `capes` · `semanticscholar` · `openalex` · `redalyc` · `bdtd`
+
+**Google Scholar (APIs):** `googlescholar` · `serpapi` · `searchapi` · `scholarapi` · `serply`
+
+**Governo/Sociedades:** `ministerio` · `sbmfc` · `sbp` · `sbpt` · `sbc`
 
 ## 📊 Exemplo de Resposta Real
 
@@ -201,18 +207,22 @@ CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8001"]
 └──────────────┬──────────────────────┘
                │ HTTP/JSON (API Key)
                ▼
-┌─────────────────────────────────────┐
-│  API Pesquisa Saúde v3 (FastAPI)    │
-│  ├─ Cache TTL em memória            │
-│  ├─ Scrapers reais (8 fontes)       │
+┌─────────────────────────────────────────────────┐
+│  API Pesquisa Saúde v3 (FastAPI)                │
+│  ├─ Cache TTL em memória                        │
+│  ├─ Scrapers reais (19 fontes)                  │
 │  │  ├─ PubMed → NCBI E-utilities    │  ← API oficial NCBI
+│  │  ├─ Cochrane → EuropePMC                     │
 │  │  ├─ SciELO → search.scielo.org  │  ← Scraping real
 │  │  ├─ LILACS → pesquisa.bvsalud    │  ← BVS/BIREME
+│  │  ├─ Semantic Scholar → Allen AI API          │
+│  │  ├─ OpenAlex → OurResearch API               │
+│  │  ├─ Google Scholar APIs (5 opções)           │
 │  │  ├─ Ministério da Saúde (PCDT)  │  ← gov.br
 │  │  └─ SBMFC, SBP, SBPT, SBC      │  ← Scraping real
-│  ├─ Formatador ABNT                 │
+│  ├─ Formatador ABNT                             │
 │  └─ Supabase (cache persistente)   │  ← opcional
-└─────────────────────────────────────┘
+└─────────────────────────────────────────────────┘
 ```
 
 ## 📁 Estrutura
