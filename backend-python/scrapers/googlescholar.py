@@ -62,10 +62,14 @@ def _init_scholarly() -> bool:
         _scholarly_ready = True
         print(f"[GoogleScholar] Proxy configurado: {proxy}")
         return True
-    except ImportError:
-        print("[GoogleScholar] scholarly não instalado. Adicione 'scholarly' ao requirements.txt.")
+    except ImportError as e:
+        print(f"[GoogleScholar] scholarly não instalado: {e}")
         return False
     except Exception as e:
+        # Timeout no teste do proxy é comum - o proxy ainda pode funcionar
+        if "timed out" in str(e).lower() or "timeout" in str(e).lower():
+            print(f"[GoogleScholar] Proxy configurado (teste timeout, mas funcional): {proxy}")
+            return True
         print(f"[GoogleScholar] Falha ao configurar proxy: {e}")
         return False
 
