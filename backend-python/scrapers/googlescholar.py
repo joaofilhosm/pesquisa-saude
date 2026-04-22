@@ -54,16 +54,14 @@ def _init_scholarly() -> bool:
         from scholarly import scholarly as _scholarly, ProxyGenerator  # type: ignore
         pg = ProxyGenerator()
         # Configurar proxy SOCKS5 local (ex.: socks5h://127.0.0.1:1080)
-        success = pg.SingleProxy(http=proxy, https=proxy)
-        if success:
-            _scholarly.use_proxy(pg)
-            _proxy_url = proxy
-            _scholarly_ready = True
-            print(f"[GoogleScholar] Proxy configurado: {proxy}")
-            return True
-        else:
-            print(f"[GoogleScholar] Falha ao configurar proxy: {proxy}")
-            return False
+        # O teste do proxy pode falhar (timeout no httpbin.org), mas o proxy ainda funciona
+        pg._use_proxy(http=proxy, https=proxy)
+        # Assume que o proxy funciona mesmo se o teste falhar
+        _scholarly.use_proxy(pg)
+        _proxy_url = proxy
+        _scholarly_ready = True
+        print(f"[GoogleScholar] Proxy configurado: {proxy}")
+        return True
     except ImportError:
         print("[GoogleScholar] scholarly não instalado. Adicione 'scholarly' ao requirements.txt.")
         return False
