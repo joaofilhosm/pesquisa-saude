@@ -56,7 +56,8 @@
       "Bash(xargs kill *)",
       "Bash(lsof *)",
       "Bash(kill 570451 *)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(pip list *)"
     ]
   }
 }
