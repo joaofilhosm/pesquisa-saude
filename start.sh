@@ -42,13 +42,19 @@ echo "PYTHONPATH: $PYTHONPATH"
 
 # Matar processo existente na porta (se houver)
 echo "Checking for existing process on port $USE_PORT..."
-EXISTING_PID=$(lsof -t -i:$USE_PORT 2>/dev/null || netstat -tlnp 2>/dev/null | grep ":$USE_PORT " | awk '{print $7}' | cut -d'/' -f1 || ss -tlnp 2>/dev/null | grep ":$USE_PORT " | awk '{print $7}' | cut -d'/' -f1)
-if [ -n "$EXISTING_PID" ]; then
-    echo "Killing existing process (PID: $EXISTING_PID) on port $USE_PORT..."
-    kill -9 $EXISTING_PID 2>/dev/null || true
-    sleep 1
-    echo "Port $USE_PORT freed."
+if command -v fuser >/dev/null 2>&1; then
+    fuser -k "${USE_PORT}/tcp" 2>/dev/null && echo "Port $USE_PORT freed." || true
+else
+    EXISTING_PID=$(ss -tlnp 2>/dev/null | grep ":${USE_PORT} " | grep -oP 'pid=\K[0-9]+' | head -1)
+    if [ -n "$EXISTING_PID" ]; then
+        echo "Killing existing process (PID: $EXISTING_PID) on port $USE_PORT..."
+        kill -15 "$EXISTING_PID" 2>/dev/null || true
+        sleep 1
+        kill -9 "$EXISTING_PID" 2>/dev/null || true
+        echo "Port $USE_PORT freed."
+    fi
 fi
+sleep 1
 
 # Iniciar uvicorn
 .venv/bin/python -m uvicorn api.main:app \

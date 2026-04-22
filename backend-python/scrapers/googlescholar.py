@@ -10,8 +10,8 @@ Referências:
   - scholarly docs: https://scholarly.readthedocs.io/en/stable/
 
 Variável de ambiente:
-  GOOGLE_SCHOLAR_PROXY — ex.: socks5h://127.0.0.1:1080
-    Use socks5h:// para DNS resolvido pelo proxy (mais seguro).
+  GOOGLE_SCHOLAR_PROXY — ex.: socks5://127.0.0.1:1080
+    Também aceita socks5h:// (convertido automaticamente).
     Omitir ou deixar em branco desabilita a fonte sem erro.
 
 Dependências extras (já em requirements.txt):
@@ -22,6 +22,8 @@ import os
 import re
 import threading
 from typing import List, Dict, Any, Optional
+
+import requests as _requests  # always available (scholarly depends on it)
 
 from .cache import cache_medio
 
@@ -45,18 +47,31 @@ def _init_scholarly() -> bool:
         print("[GoogleScholar] GOOGLE_SCHOLAR_PROXY não definida. Desabilitando fonte.")
         return False
 
-    # Normalizar formato do proxy para socks5:// (httpx-socks não suporta socks5h)
+    # Normalizar para socks5://  (aceita socks5h:// ou URL sem esquema)
     proxy = proxy.replace("socks5h://", "socks5://", 1)
-    if not proxy.startswith("socks5://"):
+    if not proxy.startswith(("socks5://", "http://", "https://")):
         proxy = "socks5://" + proxy
 
     try:
         from scholarly import scholarly as _scholarly, ProxyGenerator  # type: ignore
+
         pg = ProxyGenerator()
-        # Configurar proxy SOCKS5 local (ex.: socks5h://127.0.0.1:1080)
-        # O teste do proxy pode falhar (timeout no httpbin.org), mas o proxy ainda funciona
-        pg._use_proxy(http=proxy, https=proxy)
-        # Assume que o proxy funciona mesmo se o teste falhar
+
+        # requests >= 2.32 requires 'http://' / 'https://' as proxy dict keys.
+        # scholarly's _use_proxy() also tests the proxy against httpbin.org, which
+        # may be unreachable in cloud/datacenter environments. We configure the
+        # session directly to avoid both issues.
+        proxy_dict = {"http://": proxy, "https://": proxy}
+
+        session = _requests.Session()
+        session.proxies.update(proxy_dict)
+
+        # Inject the ready session into ProxyGenerator (bypassing the httpbin test)
+        pg._proxies = proxy_dict
+        pg._session = session
+        if hasattr(pg, '_proxy_works'):
+            pg._proxy_works = True
+
         _scholarly.use_proxy(pg)
         _proxy_url = proxy
         _scholarly_ready = True
@@ -66,10 +81,6 @@ def _init_scholarly() -> bool:
         print(f"[GoogleScholar] scholarly não instalado: {e}")
         return False
     except Exception as e:
-        # Timeout no teste do proxy é comum - o proxy ainda pode funcionar
-        if "timed out" in str(e).lower() or "timeout" in str(e).lower():
-            print(f"[GoogleScholar] Proxy configurado (teste timeout, mas funcional): {proxy}")
-            return True
         print(f"[GoogleScholar] Falha ao configurar proxy: {e}")
         return False
 
