@@ -46,7 +46,10 @@
       "Bash(echo \"Started with PID: $!\" sleep 8 echo \"=== Server Log ===\" cat server.log echo \"=== Process Check ===\" ps aux)",
       "Bash(/data/repos/joaofilhosm__pesquisa-saude/.venv/bin/pip list *)",
       "Bash(/data/repos/joaofilhosm__pesquisa-saude/.venv/bin/pip install *)",
-      "Bash(pkill -f \"uvicorn.*8001\" sleep 2 cat /tmp/startup.log)"
+      "Bash(pkill -f \"uvicorn.*8001\" sleep 2 cat /tmp/startup.log)",
+      "Bash(/data/repos/joaofilhosm__pesquisa-saude/.venv/bin/python *)",
+      "Bash(pkill -f \"uvicorn.*3099\" pkill -f \"uvicorn.*api.main\" sleep 2 cd /data/repos/joaofilhosm__pesquisa-saude PYTHONPATH=/data/repos/joaofilhosm__pesquisa-saude/backend-python .venv/bin/python -m uvicorn api.main:app --host 0.0.0.0 --port 3099 --log-level info)",
+      "Bash(echo \"Started server with PID: $!\" sleep 8 echo \"=== Server Log ===\" cat /tmp/server_3099.log echo \"\" echo \"=== Process Check ===\" ps aux)"
     ]
   }
 }
