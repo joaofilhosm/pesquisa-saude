@@ -74,6 +74,8 @@ class ABNTFormatador:
         "bdtd": "BDTD",
         "capes": "CAPES",
         "scopus": "SCOPUS",
+        "semantic scholar": "SEMANTIC SCHOLAR",
+        "google scholar": "GOOGLE SCHOLAR",
         "hc-fmusp": "HC-FMUSP",
         "hospital das clínicas": "HC-FMUSP",
         "sírio-libanês": "HOSPITAL SÍRIO-LIBANÊS",
@@ -249,6 +251,7 @@ class ABNTFormatador:
         fontes_genericas = {
             'SciELO', 'PubMed', 'LILACS', 'BVS',
             'Cochrane', 'Redalyc', 'BDTD', 'CAPES', 'Scopus',
+            'Semantic Scholar', 'Google Scholar',
         }
         periodico = artigo.journal or (
             artigo.fonte if artigo.fonte not in fontes_genericas else ""

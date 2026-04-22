@@ -40,6 +40,8 @@ from scrapers.redalyc import RedalycScraper
 from scrapers.bdtd import BDTDScraper
 from scrapers.capes import CapesScraper
 from scrapers.scopus import ScopusScraper
+from scrapers.semanticscholar import SemanticScholarScraper
+from scrapers.googlescholar import GoogleScholarScraper
 from scrapers.cache import cache_medio, cache_curto
 from abnt.formatador import ABNTFormatador, Artigo, formatador
 
@@ -140,6 +142,8 @@ FONTES_CONFIG = [
     {"slug": "bdtd", "nome": "BDTD (Teses e Dissertações)", "tipo": "base_dados", "prioridade": 2},
     {"slug": "capes", "nome": "Portal CAPES (CrossRef)", "tipo": "base_dados", "prioridade": 1},
     {"slug": "scopus", "nome": "Scopus (Elsevier)", "tipo": "base_dados", "prioridade": 1},
+    {"slug": "semanticscholar", "nome": "Semantic Scholar (Allen AI)", "tipo": "base_dados", "prioridade": 1},
+    {"slug": "googlescholar", "nome": "Google Scholar (SerpAPI)", "tipo": "base_dados", "prioridade": 1},
 ]
 
 # === Lifespan ===
@@ -160,6 +164,8 @@ async def lifespan(app: FastAPI):
         "bdtd": BDTDScraper(),
         "capes": CapesScraper(),
         "scopus": ScopusScraper(),
+        "semanticscholar": SemanticScholarScraper(),
+        "googlescholar": GoogleScholarScraper(),
     }
     yield
 
@@ -173,13 +179,15 @@ app = FastAPI(
 Esta API realiza pesquisas **reais** em múltiplas fontes de saúde,
 retornando artigos verídicos com links funcionais, DOIs reais e abstracts completos.
 
-### Fontes de Dados (13 fontes)
+### Fontes de Dados (15 fontes)
 
 **Bases de Dados Internacionais**
 - **PubMed** – NCBI E-utilities API oficial · abstract completo · DOI real · PMID
 - **Cochrane Library** – EuropePMC API · revisões sistemáticas e meta-análises
 - **Scopus** – Elsevier Search API · requer `ELSEVIER_API_KEY` · maior base de citações
 - **SciELO** – search.scielo.org · artigos científicos em português/inglês
+- **Semantic Scholar** – Allen AI Graph API gratuita · +200 M papers · contagem de citações · opcional `S2_API_KEY`
+- **Google Scholar** – SerpAPI · requer `SERPAPI_KEY` · plano gratuito 100 buscas/mês
 
 **Bases de Dados Nacionais / Latino-Americanas**
 - **LILACS/BVS** – pesquisa.bvsalud.org · literatura latino-americana (BIREME)
@@ -231,7 +239,7 @@ const API_KEY  = import.meta.env.VITE_API_KEY  || 'sk-pesquisa-saude-2026-master
 
 export type FonteSlug =
   | 'pubmed' | 'cochrane' | 'scielo' | 'lilacs' | 'capes' | 'scopus'
-  | 'redalyc' | 'bdtd'
+  | 'redalyc' | 'bdtd' | 'semanticscholar' | 'googlescholar'
   | 'ministerio' | 'sbmfc' | 'sbp' | 'sbpt' | 'sbc';
 
 export interface ResultadoPesquisa {
@@ -313,7 +321,9 @@ const FONTES: { slug: FonteSlug; label: string }[] = [
   { slug: 'scielo',     label: 'SciELO'             },
   { slug: 'lilacs',     label: 'LILACS/BVS'         },
   { slug: 'capes',      label: 'Portal CAPES'       },
-  { slug: 'scopus',     label: 'Scopus'             },
+  { slug: 'scopus',          label: 'Scopus'             },
+  { slug: 'semanticscholar', label: 'Semantic Scholar'   },
+  { slug: 'googlescholar',   label: 'Google Scholar'     },
   { slug: 'redalyc',   label: 'Redalyc'            },
   { slug: 'bdtd',       label: 'BDTD (Teses)'       },
   { slug: 'ministerio', label: 'Min. Saúde (PCDT)'  },
@@ -817,7 +827,9 @@ _PLAYGROUND_HTML = """<!DOCTYPE html>
     { slug: "scielo",    label: "SciELO",              tipo: "base_dados" },
     { slug: "lilacs",    label: "LILACS/BVS",          tipo: "base_dados" },
     { slug: "capes",     label: "Portal CAPES",        tipo: "base_dados" },
-    { slug: "scopus",    label: "Scopus",              tipo: "base_dados" },
+    { slug: "scopus",           label: "Scopus",              tipo: "base_dados" },
+    { slug: "semanticscholar",  label: "Semantic Scholar",    tipo: "base_dados" },
+    { slug: "googlescholar",    label: "Google Scholar",      tipo: "base_dados" },
     { slug: "redalyc",   label: "Redalyc",             tipo: "base_dados" },
     { slug: "bdtd",      label: "BDTD (Teses)",        tipo: "base_dados" },
     { slug: "ministerio",label: "Ministério Saúde",    tipo: "governo"    },
