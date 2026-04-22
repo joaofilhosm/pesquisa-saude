@@ -55,7 +55,8 @@
       "Bash(lsof -t -i:3099)",
       "Bash(xargs kill *)",
       "Bash(lsof *)",
-      "Bash(kill 570451 *)"
+      "Bash(kill 570451 *)",
+      "WebSearch"
     ]
   }
 }
