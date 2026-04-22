@@ -248,6 +248,12 @@ Adicione integração completa com a API de Pesquisa em Saúde brasileira (v3.0)
 VITE_API_URL=https://req.joaosmfilho.org
 VITE_API_KEY=sk-pesquisa-saude-2026-master-key
 
+# APIs do Google Scholar (opcionais - para redundância)
+VITE_SERPAPI_KEY=xxx           # https://serpapi.com/manage-api-key
+VITE_SEARCHAPI_KEY=xxx         # https://www.searchapi.io/api-key
+VITE_SCHOLARAPI_KEY=xxx        # https://scholarapi.net
+VITE_SERPLY_API_KEY=xxx        # https://serply.io
+
 ## 2. src/lib/pesquisaSaude.ts
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://req.joaosmfilho.org';
@@ -255,6 +261,7 @@ const API_KEY  = import.meta.env.VITE_API_KEY  || 'sk-pesquisa-saude-2026-master
 
 export type FonteSlug =
   | 'pubmed' | 'cochrane' | 'scielo' | 'lilacs' | 'capes' | 'semanticscholar' | 'openalex' | 'googlescholar'
+  | 'serpapi' | 'searchapi' | 'scholarapi' | 'serply'
   | 'redalyc' | 'bdtd'
   | 'ministerio' | 'sbmfc' | 'sbp' | 'sbpt' | 'sbc';
 
@@ -336,11 +343,15 @@ const FONTES: { slug: FonteSlug; label: string }[] = [
   { slug: 'cochrane',   label: 'Cochrane'           },
   { slug: 'scielo',     label: 'SciELO'             },
   { slug: 'lilacs',     label: 'LILACS/BVS'         },
-  { slug: 'capes',          label: 'Portal CAPES'       },
+  { slug: 'capes',      label: 'Portal CAPES'       },
   { slug: 'semanticscholar', label: 'Semantic Scholar'   },
   { slug: 'openalex',       label: 'OpenAlex'           },
-  { slug: 'googlescholar',  label: 'Google Scholar'     },
-  { slug: 'redalyc',        label: 'Redalyc'            },
+  { slug: 'googlescholar',  label: 'Google Scholar (proxy)'     },
+  { slug: 'serpapi',    label: 'Google Scholar (SerpAPI)'     },
+  { slug: 'searchapi',  label: 'Google Scholar (SearchApi)'   },
+  { slug: 'scholarapi', label: 'Google Scholar (ScholarAPI)'  },
+  { slug: 'serply',     label: 'Google Scholar (Serply)'      },
+  { slug: 'redalyc',    label: 'Redalyc'            },
   { slug: 'bdtd',       label: 'BDTD (Teses)'       },
   { slug: 'ministerio', label: 'Min. Saúde (PCDT)'  },
   { slug: 'sbmfc',      label: 'SBMFC'              },
@@ -494,12 +505,27 @@ Base URL: https://req.joaosmfilho.org  |  Auth: header X-API-Key
 
 POST /pesquisar          → busca avançada (body JSON com query, fontes, ano_min, limit)
 GET  /pesquisar?q=termo  → busca simples via query string
-GET  /pesquisar/{fonte}  → busca em fonte específica (pubmed|scielo|lilacs|ministerio|sbmfc|sbp|sbpt|sbc)
+GET  /pesquisar/{fonte}  → busca em fonte específica (19 fontes disponíveis)
 POST /resposta           → texto formatado com citações ABNT embutidas
-GET  /fontes             → lista as 8 fontes disponíveis
+GET  /fontes             → lista as 19 fontes disponíveis
 GET  /status             → status operacional de cada fonte
 GET  /playground         → interface visual para testar sem código
 GET  /docs               → Swagger UI
+
+### Fontes Disponíveis (19)
+
+**Google Scholar (5 opções):**
+- `googlescholar` - Google Scholar via proxy SOCKS5 (requer GOOGLE_SCHOLAR_PROXY)
+- `serpapi` - Google Scholar via SerpAPI (requer SERPAPI_KEY)
+- `searchapi` - Google Scholar via SearchApi.io (requer SEARCHAPI_KEY)
+- `scholarapi` - Google Scholar via ScholarAPI.net (requer SCHOLARAPI_KEY)
+- `serply` - Google Scholar via Serply.io (requer SERPLY_API_KEY)
+
+**Bases Internacionais:** pubmed, cochrane, scielo, semanticscholar, openalex
+
+**Bases Nacionais/Latino-Americanas:** lilacs, redalyc, bdtd, capes
+
+**Protocolos Nacionais:** ministerio, sbmfc, sbp, sbpt, sbc
 ```
     """,
     version="3.0.0",
