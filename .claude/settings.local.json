@@ -43,7 +43,9 @@
       "Bash(pkill -f \"uvicorn.*3099\")",
       "Bash(PYTHONPATH=/root/repo-panel/data/repos/joaofilhosm__pesquisa-saude/backend-python .venv/bin/python -m uvicorn api.main:app --host 0.0.0.0 --port 3099 --log-level info)",
       "Bash(echo \"PID: $!\")",
-      "Bash(echo \"Started with PID: $!\" sleep 8 echo \"=== Server Log ===\" cat server.log echo \"=== Process Check ===\" ps aux)"
+      "Bash(echo \"Started with PID: $!\" sleep 8 echo \"=== Server Log ===\" cat server.log echo \"=== Process Check ===\" ps aux)",
+      "Bash(/data/repos/joaofilhosm__pesquisa-saude/.venv/bin/pip list *)",
+      "Bash(/data/repos/joaofilhosm__pesquisa-saude/.venv/bin/pip install *)"
     ]
   }
 }
