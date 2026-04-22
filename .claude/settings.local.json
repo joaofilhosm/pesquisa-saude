@@ -50,7 +50,11 @@
       "Bash(/data/repos/joaofilhosm__pesquisa-saude/.venv/bin/python *)",
       "Bash(pkill -f \"uvicorn.*3099\" pkill -f \"uvicorn.*api.main\" sleep 2 cd /data/repos/joaofilhosm__pesquisa-saude PYTHONPATH=/data/repos/joaofilhosm__pesquisa-saude/backend-python .venv/bin/python -m uvicorn api.main:app --host 0.0.0.0 --port 3099 --log-level info)",
       "Bash(echo \"Started server with PID: $!\" sleep 8 echo \"=== Server Log ===\" cat /tmp/server_3099.log echo \"\" echo \"=== Process Check ===\" ps aux)",
-      "Bash(pkill -f \"uvicorn.*3099\" pkill -f \"uvicorn.*api.main\" sleep 2 ss -tlnp)"
+      "Bash(pkill -f \"uvicorn.*3099\" pkill -f \"uvicorn.*api.main\" sleep 2 ss -tlnp)",
+      "Bash(pkill -9 -f \"uvicorn.*3099\" pkill -9 -f \"uvicorn.*api.main\" sleep 2 ss -tlnp)",
+      "Bash(lsof -t -i:3099)",
+      "Bash(xargs kill *)",
+      "Bash(lsof *)"
     ]
   }
 }
