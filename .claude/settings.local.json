@@ -57,7 +57,10 @@
       "Bash(lsof *)",
       "Bash(kill 570451 *)",
       "WebSearch",
-      "Bash(pip list *)"
+      "Bash(pip list *)",
+      "Bash(pip3 list *)",
+      "Bash(pip uninstall *)",
+      "Bash(kill 613613 613601)"
     ]
   }
 }
