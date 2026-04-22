@@ -37,7 +37,10 @@
       "Bash(PORT=3099 ./start.sh)",
       "Bash(kill 504591)",
       "Bash(kill 508515)",
-      "Bash(.venv/bin/python *)"
+      "Bash(.venv/bin/python *)",
+      "Bash(mkdir -p /data/repos)",
+      "Bash(ln -sfn /root/repo-panel/data/repos/joaofilhosm__pesquisa-saude /data/repos/joaofilhosm__pesquisa-saude)",
+      "Bash(pkill -f \"uvicorn.*3099\")"
     ]
   }
 }
